@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NCT 首尔同款地图 · 同款店铺 & 拍照打卡点</title>
+  <link rel="stylesheet" href="lib/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <div class="logo">💚</div>
+    <div>
+      <h1>NCT 首尔同款地图</h1>
+      <p class="subtitle">NCT · NCT 127 · NCT DREAM · WayV · NCT WISH — 同款店铺 &amp; 拍照打卡点</p>
+    </div>
+  </header>
+
+  <div id="app">
+    <aside id="sidebar">
+      <div class="panel">
+        <div class="search-box">
+          <input id="search" type="search" placeholder="搜索：成员 / 分队 / 店铺 / 地铁站…（例：泰容、在玹、127、咖啡）">
+          <button id="search-clear" class="search-clear" title="清空搜索">✕</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>📍 分类</h2>
+        <div id="category-filter" class="chips"></div>
+      </div>
+
+      <div class="panel">
+        <h2>🎤 分队（可多选）</h2>
+        <div id="unit-filter" class="chips"></div>
+      </div>
+
+      <div class="panel">
+        <h2>👤 成员（多选 = 包含任意所选成员的地点）</h2>
+        <div id="member-filter" class="chips"></div>
+      </div>
+
+      <div class="panel">
+        <h2>🏷️ 类型（可多选）</h2>
+        <div id="type-filter" class="chips"></div>
+      </div>
+
+      <div class="panel">
+        <h2>🧭 图例</h2>
+        <div class="legend">
+          <div class="legend-item"><span class="legend-pin store" style="--c:#0b7285"></span> 同款店铺（圆形）</div>
+          <div class="legend-item"><span class="legend-pin spot" style="--c:#1971c2"></span> 拍照打卡点（菱形）</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#00c472"></span> NCT 全体</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#ff3b57"></span> NCT 127</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span> NCT DREAM</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#f5a623"></span> WayV</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#a78bfa"></span> NCT WISH</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#8d99ae"></span> 多分队共同</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>🚇 路线规划（公共交通）</h2>
+        <button id="route-toggle" class="route-toggle">开始选点（可多选地点规划路线）</button>
+        <div id="route-panel" class="route-panel">
+          <p class="route-hint">开启后，先在下方填写<b>出发地址 / 附近地铁站</b>（可选，留空则从第一个地点出发），再在地点列表勾选 <b>2 个以上</b> 地点，系统会按<b>地铁/公交</b>估算最优顺序，并标注每一段<b>是否可用气候卡（기후동행카드）</b>，每段附 Naver Map 实时公交链接。</p>
+          <label class="route-origin-label">🏠 出发地址（地铁站名或地址均可）
+            <input id="route-origin" type="text" placeholder="如：홍대입구역 / 弘大入口 / 首尔麻浦区…（留空则从第一个地点出发）">
+          </label>
+          <div class="route-count" id="route-count">已选 0 个地点</div>
+          <div class="route-btns">
+            <button id="route-plan" class="btn-primary">🚇 规划最优路线（公共交通）</button>
+            <button id="route-clear" class="btn-plain">清空选择</button>
+          </div>
+          <div id="route-msg" class="route-msg"></div>
+          <div id="route-result"></div>
+        </div>
+      </div>
+
+
+      <div class="panel">
+        <h2>➕ 添加地点</h2>
+        <button id="add-place-btn" class="route-toggle">添加网站中没有的地点</button>
+        <p class="route-hint">输入名称/地址后自动定位并加入地图，保存到<b>本浏览器</b>；若已存在会自动提示定位。补充信息（成员/分队/类型）请手动勾选填写。</p>
+      </div>
+
+      <div class="panel actions">
+        <span id="result-count"></span>
+        <button id="clear-all">清除筛选</button>
+      </div>
+    </aside>
+
+    <main id="main">
+      <div id="map"></div>
+      <div id="list-wrap">
+        <div class="list-head">
+          <span>📍 地点列表</span>
+          <span class="hint">点击卡片定位到地图</span>
+        </div>
+        <div id="place-list"></div>
+      </div>
+    </main>
+  </div>
+
+  <button id="filter-toggle" class="filter-toggle">☰ 筛选</button>
+  <button id="map-mode-toggle" class="map-mode-toggle" title="切换地图手势 / 页面滚动">📍 地图操作</button>
+
+  <footer>
+    💚 NCT 首尔同款地图 · 数据来自粉丝社区公开整理（小红书 / 韩游网 / Creatrip / oshito 等），坐标约略，导航请以 Naver Map / 谷歌地图为准，欢迎补充修正 ·
+    <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a>
+  </footer>
+
+
+  <div id="add-modal" class="modal-overlay" hidden>
+    <div class="modal">
+      <h3>➕ 添加自定义地点</h3>
+      <p class="modal-hint">填写后自动定位并加入地图，保存到<b>本浏览器</b>（刷新后仍在）。若网站中已存在会自动提示并定位，不会重复添加。</p>
+      <div class="modal-grid">
+        <label>地点名称（中文）<input id="ap-name" placeholder="如：某某咖啡厅"></label>
+        <label>韩文名称<input id="ap-nameko" placeholder="如：카페 이름"></label>
+        <label>地址（韩文/中文，用于定位）<input id="ap-address" placeholder="如：서울 마포구 …"></label>
+        <label>最近地铁站<input id="ap-station" placeholder="如：홍대입구역 / 弘大入口站"></label>
+        <label>分类
+          <select id="ap-category">
+            <option value="store">同款店铺</option>
+            <option value="spot">拍照打卡点</option>
+          </select>
+        </label>
+        <label>类型
+          <select id="ap-type">
+            <option>美食</option><option>咖啡</option><option>购物</option><option>官方周边</option><option>快闪</option><option>拍摄地</option><option>拍照打卡点</option><option>演出场地</option><option>展览</option>
+          </select>
+        </label>
+        <label>纬度（可选，留空自动定位）<input id="ap-lat" type="number" step="any" placeholder="如 37.5565"></label>
+        <label>经度（可选，留空自动定位）<input id="ap-lng" type="number" step="any" placeholder="如 126.9235"></label>
+      </div>
+      <label>所属分队（可多选）<div id="ap-units" class="chips"></div></label>
+      <label>成员（可多选）<div id="ap-members" class="chips"></div></label>
+      <label>备注 / 信息来源说明<textarea id="ap-desc" rows="2"></textarea></label>
+      <label>来源链接<input id="ap-source" placeholder="https://…（选填）"></label>
+      <div id="ap-msg" class="ap-msg"></div>
+      <div class="modal-btns">
+        <button id="ap-save" class="btn-primary">保存并加入地图</button>
+        <button id="ap-export" class="btn-plain">导出数据</button>
+        <button id="ap-cancel" class="btn-plain">关闭</button>
+      </div>
+      <p class="modal-foot">💡 导出 JSON 后粘贴进 <code>js/data.js</code> 的 PLACES 数组，即可永久同步到网站文件（分享给别人时也能看到）。</p>
+    </div>
+  </div>
+
+
+  <script src="lib/leaflet.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/transit.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

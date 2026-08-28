@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NCT 首尔同款地图 · 完整 ER 图（分表版）</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; margin: 0; background: #f6f8fb; color: #1f2933; }
+  .wrap { max-width: 1640px; margin: 0 auto; padding: 20px 16px 60px; }
+  h1 { font-size: 22px; margin: 6px 0 4px; }
+  .sub { color: #6b7280; font-size: 13px; margin: 0 0 14px; line-height: 1.7; }
+  .svg-box { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 10px; overflow-x: auto; box-shadow: 0 2px 10px rgba(15,23,42,.06); }
+  .svg-box svg { max-width: none; display: block; }
+  h2 { font-size: 16px; margin: 26px 0 10px; }
+  table { border-collapse: collapse; width: 100%; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; font-size: 13px; }
+  th, td { border: 1px solid #e5e7eb; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f0f4f8; font-weight: 600; white-space: nowrap; }
+  code { background: #eef2f6; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 11px; color: #fff; }
+  .t-green { background: #2f9e44; } .t-blue { background: #1971c2; } .t-purple { background: #7048e8; } .t-orange { background: #e8590c; }
+  .note { font-size: 12.5px; color: #6b7280; line-height: 1.8; background: #fff8e6; border: 1px solid #ffe8b3; border-radius: 10px; padding: 10px 14px; margin-top: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>💚 NCT 首尔同款地图 · 完整 ER 图（分表版）</h1>
+  <p class="sub">本网站是纯前端静态站点，<b>没有后端数据库</b>：数据存放在 <code>js/data.js</code>（地点 / 成员 / 分队）、<code>js/transit.js</code>（地铁网络与站点坐标），用户添加的地点保存在<b>浏览器 localStorage</b>。下图把每个表独立展示，标注了主键、外键、字段类型与表间关系。</p>
+
+  <div class="svg-box"><svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1240" viewBox="0 0 1600 1240" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif">
+<rect width="1600" height="1240" fill="#fbfdff"/>
+<text x="40" y="38" font-size="24" font-weight="800" fill="#0b7285">NCT 首尔同款地图 · 完整 ER 图（分表版）</text>
+<text x="40" y="62" font-size="13" fill="#6b7280">数据源：js/data.js · js/transit.js · localStorage · 运行时内存（无后端数据库）。🔑=主键  FK=外键  [] = 数组/多值</text>
+<g font-size="12" fill="#495057">
+<rect x="40" y="76" width="14" height="14" fill="#f0fdf4" stroke="#2f9e44"/><text x="62" y="88">成员/分队/类型</text>
+<rect x="230" y="76" width="14" height="14" fill="#eff6ff" stroke="#1971c2"/><text x="252" y="88">地点</text>
+<rect x="350" y="76" width="14" height="14" fill="#f3f0ff" stroke="#7048e8"/><text x="372" y="88">交通数据</text>
+<rect x="470" y="76" width="14" height="14" fill="#fff4e6" stroke="#e8590c"/><text x="492" y="88">运行时/自定义</text>
+<line x1="590" y1="84" x2="640" y2="84" stroke="#495057" stroke-dasharray="7,5"/><text x="650" y="88">派生 / 关联</text>
+</g>
+<g>
+<rect x="40" y="120" width="360" height="132" rx="10" fill="#ffffff" stroke="#2f9e44" stroke-width="1.8"/>
+<path d="M40 130 Q40 120 50 120 L390 120 Q400 120 400 130 L400 156 L40 156 Z" fill="#2f9e44"/>
+<text x="52" y="144" font-size="15" font-weight="800" fill="#ffffff">UNIT · 分队</text>
+<text x="388" y="144" font-size="11" fill="rgba(255,255,255,.85)" text-anchor="end">UNITS</text>
+<text x="50" y="171" font-size="12" fill="#b91c1c" font-weight="700">🔑</text>
+<text x="72" y="171" font-size="12" fill="#374151" font-weight="400">id</text>
+<text x="392" y="171" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+<text x="348" y="171" font-size="11" fill="#6b7280" text-anchor="end">nct/n127/dream/wayv/wish</text>
+<rect x="41" y="178" width="358" height="22" fill="#f0fdf4"/>
+<text x="50" y="193" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="50" y="193" font-size="12" fill="#374151" font-weight="400">name</text>
+<text x="392" y="193" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+<text x="50" y="215" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="50" y="215" font-size="12" fill="#374151" font-weight="400">short</text>
+<text x="392" y="215" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+<rect x="41" y="222" width="358" height="22" fill="#f0fdf4"/>
+<text x="50" y="237" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="50" y="237" font-size="12" fill="#374151" font-weight="400">color</text>
+<text x="392" y="237" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+</g>
+<g>
+<rect x="40" y="310" width="360" height="176" rx="10" fill="#ffffff" stroke="#2f9e44" stroke-width="1.8"/>
+<path d="M40 320 Q40 310 50 310 L390 310 Q400 310 400 320 L400 346 L40 346 Z" fill="#2f9e44"/>
+<text x="52" y="334" font-size="15" font-weight="800" fill="#ffffff">MEMBER · 成员</text>
+<text x="388" y="334" font-size="11" fill="rgba(255,255,255,.85)" text-anchor="end">MEMBERS</text>
+<text x="50" y="361" font-size="12" fill="#b91c1c" font-weight="700">🔑</text>
+<text x="72" y="361" font-size="12" fill="#374151" font-weight="400">id</text>
+<text x="392" y="361" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+<rect x="41" y="368" width="358" height="22" fill="#f0fdf4"/>
+<text x="50" y="383" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="50" y="383" font-size="12" fill="#374151" font-weight="400">name / en</text>
+<text x="392" y="383" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+<text x="50" y="405" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="50" y="405" font-size="12" fill="#374151" font-weight="400">birth</text>
+<text x="392" y="405" font-size="11" fill="#868e96" text-anchor="end">DATE</text>
+<text x="348" y="405" font-size="11" fill="#6b7280" text-anchor="end">年龄排序</text>
+<rect x="41" y="412" width="358" height="22" fill="#f0fdf4"/>
+<text x="50" y="427" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="50" y="427" font-size="12" fill="#374151" font-weight="400">aliases[]</text>
+<text x="392" y="427" font-size="11" fill="#868e96" text-anchor="end">TEXT[]</text>
+<text x="335" y="427" font-size="11" fill="#6b7280" text-anchor="end">中/英/韩别名</text>
+<text x="50" y="449" font-size="12" fill="#7048e8" font-weight="700">FK </text>
+<text x="72" y="449" font-size="12" fill="#374151" font-weight="400">units[]</text>
+<text x="392" y="449" font-size="11" fill="#868e96" text-anchor="end">→ UNIT</text>
+<text x="329.5" y="449" font-size="11" fill="#6b7280" text-anchor="end">可多个</text>
+<rect x="41" y="456" width="358" height="22" fill="#f0fdf4"/>
+<text x="50" y="471" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="50" y="471" font-size="12" fill="#374151" font-weight="400">departed</text>
+<text x="392" y="471" font-size="11" fill="#868e96" text-anchor="end">BOOL</text>
+<text x="348" y="471" font-size="11" fill="#6b7280" text-anchor="end">是否已退团</text>
+</g>
+<g>
+<rect x="40" y="560" width="360" height="88" rx="10" fill="#ffffff" stroke="#2f9e44" stroke-width="1.8"/>
+<path d="M40 570 Q40 560 50 560 L390 560 Q400 560 400 570 L400 596 L40 596 Z" fill="#2f9e44"/>
+<text x="52" y="584" font-size="15" font-weight="800" fill="#ffffff">TYPE · 类型</text>
+<text x="388" y="584" font-size="11" fill="rgba(255,255,255,.85)" text-anchor="end">TYPE_COLORS</text>
+<text x="50" y="611" font-size="12" fill="#b91c1c" font-weight="700">🔑</text>
+<text x="72" y="611" font-size="12" fill="#374151" font-weight="400">type</text>
+<text x="392" y="611" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+<text x="348" y="611" font-size="11" fill="#6b7280" text-anchor="end">美食/咖啡/拍摄地…</text>
+<rect x="41" y="618" width="358" height="22" fill="#f0fdf4"/>
+<text x="50" y="633" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="50" y="633" font-size="12" fill="#374151" font-weight="400">color</text>
+<text x="392" y="633" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+</g>
+<g>
+<rect x="40" y="720" width="360" height="88" rx="10" fill="#ffffff" stroke="#2f9e44" stroke-width="1.8"/>
+<path d="M40 730 Q40 720 50 720 L390 720 Q400 720 400 730 L400 756 L40 756 Z" fill="#2f9e44"/>
+<text x="52" y="744" font-size="15" font-weight="800" fill="#ffffff">CATEGORY · 分类</text>
+<text x="388" y="744" font-size="11" fill="rgba(255,255,255,.85)" text-anchor="end">CATEGORIES</text>
+<text x="50" y="771" font-size="12" fill="#b91c1c" font-weight="700">🔑</text>
+<text x="72" y="771" font-size="12" fill="#374151" font-weight="400">category</text>
+<text x="392" y="771" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+<text x="348" y="771" font-size="11" fill="#6b7280" text-anchor="end">store / spot</text>
+<rect x="41" y="778" width="358" height="22" fill="#f0fdf4"/>
+<text x="50" y="793" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="50" y="793" font-size="12" fill="#374151" font-weight="400">label</text>
+<text x="392" y="793" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+<text x="348" y="793" font-size="11" fill="#6b7280" text-anchor="end">同款/打卡</text>
+</g>
+<g>
+<rect x="560" y="120" width="400" height="308" rx="10" fill="#ffffff" stroke="#1971c2" stroke-width="1.8"/>
+<path d="M560 130 Q560 120 570 120 L950 120 Q960 120 960 130 L960 156 L560 156 Z" fill="#1971c2"/>
+<text x="572" y="144" font-size="15" font-weight="800" fill="#ffffff">PLACE · 地点</text>
+<text x="948" y="144" font-size="11" fill="rgba(255,255,255,.85)" text-anchor="end">PLACES</text>
+<text x="570" y="171" font-size="12" fill="#b91c1c" font-weight="700">🔑</text>
+<text x="592" y="171" font-size="12" fill="#374151" font-weight="400">id</text>
+<text x="952" y="171" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+<rect x="561" y="178" width="398" height="22" fill="#eff6ff"/>
+<text x="570" y="193" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="570" y="193" font-size="12" fill="#374151" font-weight="400">name / nameKo</text>
+<text x="952" y="193" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+<text x="908" y="193" font-size="11" fill="#6b7280" text-anchor="end">中/韩文名</text>
+<text x="570" y="215" font-size="12" fill="#7048e8" font-weight="700">FK </text>
+<text x="592" y="215" font-size="12" fill="#374151" font-weight="400">type</text>
+<text x="952" y="215" font-size="11" fill="#868e96" text-anchor="end">→ TYPE</text>
+<rect x="561" y="222" width="398" height="22" fill="#eff6ff"/>
+<text x="570" y="237" font-size="12" fill="#7048e8" font-weight="700">FK </text>
+<text x="592" y="237" font-size="12" fill="#374151" font-weight="400">category</text>
+<text x="952" y="237" font-size="11" fill="#868e96" text-anchor="end">→ CATEGORY</text>
+<text x="570" y="259" font-size="12" fill="#7048e8" font-weight="700">FK </text>
+<text x="592" y="259" font-size="12" fill="#374151" font-weight="400">units[]</text>
+<text x="952" y="259" font-size="11" fill="#868e96" text-anchor="end">→ UNIT</text>
+<text x="889.5" y="259" font-size="11" fill="#6b7280" text-anchor="end">所属分队</text>
+<rect x="561" y="266" width="398" height="22" fill="#eff6ff"/>
+<text x="570" y="281" font-size="12" fill="#7048e8" font-weight="700">FK </text>
+<text x="592" y="281" font-size="12" fill="#374151" font-weight="400">members[]</text>
+<text x="952" y="281" font-size="11" fill="#868e96" text-anchor="end">→ MEMBER</text>
+<text x="876.5" y="281" font-size="11" fill="#6b7280" text-anchor="end">同款成员</text>
+<text x="570" y="303" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="570" y="303" font-size="12" fill="#374151" font-weight="400">desc</text>
+<text x="952" y="303" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+<rect x="561" y="310" width="398" height="22" fill="#eff6ff"/>
+<text x="570" y="325" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="570" y="325" font-size="12" fill="#374151" font-weight="400">addressKo / address</text>
+<text x="952" y="325" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+<text x="570" y="347" font-size="12" fill="#7048e8" font-weight="700">FK </text>
+<text x="592" y="347" font-size="12" fill="#374151" font-weight="400">station</text>
+<text x="952" y="347" font-size="11" fill="#868e96" text-anchor="end">→ STATION</text>
+<text x="870" y="347" font-size="11" fill="#6b7280" text-anchor="end">文本解析</text>
+<rect x="561" y="354" width="398" height="22" fill="#eff6ff"/>
+<text x="570" y="369" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="570" y="369" font-size="12" fill="#374151" font-weight="400">hours / source</text>
+<text x="952" y="369" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+<text x="570" y="391" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="570" y="391" font-size="12" fill="#374151" font-weight="400">lat / lng</text>
+<text x="952" y="391" font-size="11" fill="#868e96" text-anchor="end">REAL</text>
+<rect x="561" y="398" width="398" height="22" fill="#eff6ff"/>
+<text x="570" y="413" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="570" y="413" font-size="12" fill="#374151" font-weight="400">custom</text>
+<text x="952" y="413" font-size="11" fill="#868e96" text-anchor="end">BOOL</text>
+<text x="908" y="413" font-size="11" fill="#6b7280" text-anchor="end">自定义</text>
+</g>
+<g>
+<rect x="560" y="520" width="400" height="110" rx="10" fill="#ffffff" stroke="#e8590c" stroke-width="1.8"/>
+<path d="M560 530 Q560 520 570 520 L950 520 Q960 520 960 530 L960 556 L560 556 Z" fill="#e8590c"/>
+<text x="572" y="544" font-size="15" font-weight="800" fill="#ffffff">CUSTOM_PLACE · 自定义地点</text>
+<text x="948" y="544" font-size="11" fill="rgba(255,255,255,.85)" text-anchor="end">localStorage</text>
+<text x="570" y="571" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="570" y="571" font-size="12" fill="#374151" font-weight="400">结构同 PLACE</text>
+<text x="952" y="571" font-size="11" fill="#6b7280" text-anchor="end">custom=true</text>
+<rect x="561" y="578" width="398" height="22" fill="#fff4e6"/>
+<text x="570" y="593" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="570" y="593" font-size="12" fill="#374151" font-weight="400">存储位置</text>
+<text x="952" y="593" font-size="11" fill="#868e96" text-anchor="end">localStorage</text>
+<text x="570" y="615" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="570" y="615" font-size="12" fill="#374151" font-weight="400">导出</text>
+<text x="952" y="615" font-size="11" fill="#868e96" text-anchor="end">JSON</text>
+<text x="908" y="615" font-size="11" fill="#6b7280" text-anchor="end">可合并进 data.js</text>
+</g>
+<g>
+<rect x="560" y="760" width="400" height="132" rx="10" fill="#ffffff" stroke="#e8590c" stroke-width="1.8"/>
+<path d="M560 770 Q560 760 570 760 L950 760 Q960 760 960 770 L960 796 L560 796 Z" fill="#e8590c"/>
+<text x="572" y="784" font-size="15" font-weight="800" fill="#ffffff">ROUTE_PLAN · 路线规划</text>
+<text x="948" y="784" font-size="11" fill="rgba(255,255,255,.85)" text-anchor="end">运行时(内存)</text>
+<text x="570" y="811" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="570" y="811" font-size="12" fill="#374151" font-weight="400">origin</text>
+<text x="952" y="811" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+<text x="908" y="811" font-size="11" fill="#6b7280" text-anchor="end">出发地址</text>
+<rect x="561" y="818" width="398" height="22" fill="#fff4e6"/>
+<text x="570" y="833" font-size="12" fill="#7048e8" font-weight="700">FK </text>
+<text x="592" y="833" font-size="12" fill="#374151" font-weight="400">origin_station</text>
+<text x="952" y="833" font-size="11" fill="#868e96" text-anchor="end">→ STATION</text>
+<text x="870" y="833" font-size="11" fill="#6b7280" text-anchor="end">最近地铁站</text>
+<text x="570" y="855" font-size="12" fill="#7048e8" font-weight="700">FK </text>
+<text x="592" y="855" font-size="12" fill="#374151" font-weight="400">selected[]</text>
+<text x="952" y="855" font-size="11" fill="#868e96" text-anchor="end">→ PLACE</text>
+<text x="883" y="855" font-size="11" fill="#6b7280" text-anchor="end">勾选地点</text>
+<rect x="561" y="862" width="398" height="22" fill="#fff4e6"/>
+<text x="570" y="877" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="570" y="877" font-size="12" fill="#374151" font-weight="400">order[]</text>
+<text x="952" y="877" font-size="11" fill="#868e96" text-anchor="end">INT[]</text>
+<text x="901.5" y="877" font-size="11" fill="#6b7280" text-anchor="end">TSP最优顺序</text>
+</g>
+<g>
+<rect x="560" y="980" width="400" height="132" rx="10" fill="#ffffff" stroke="#e8590c" stroke-width="1.8"/>
+<path d="M560 990 Q560 980 570 980 L950 980 Q960 980 960 990 L960 1016 L560 1016 Z" fill="#e8590c"/>
+<text x="572" y="1004" font-size="15" font-weight="800" fill="#ffffff">TRANSIT_LEG · 行程段</text>
+<text x="948" y="1004" font-size="11" fill="rgba(255,255,255,.85)" text-anchor="end">派生</text>
+<text x="570" y="1031" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="570" y="1031" font-size="12" fill="#374151" font-weight="400">from / to</text>
+<text x="952" y="1031" font-size="11" fill="#868e96" text-anchor="end">→ 节点</text>
+<text x="891.5" y="1031" font-size="11" fill="#6b7280" text-anchor="end">出发地/地点</text>
+<rect x="561" y="1038" width="398" height="22" fill="#fff4e6"/>
+<text x="570" y="1053" font-size="12" fill="#7048e8" font-weight="700">FK </text>
+<text x="592" y="1053" font-size="12" fill="#374151" font-weight="400">via[]</text>
+<text x="952" y="1053" font-size="11" fill="#868e96" text-anchor="end">→ STATION</text>
+<text x="870" y="1053" font-size="11" fill="#6b7280" text-anchor="end">经过站点</text>
+<text x="570" y="1075" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="570" y="1075" font-size="12" fill="#374151" font-weight="400">minutes / transfers</text>
+<text x="952" y="1075" font-size="11" fill="#868e96" text-anchor="end">REAL/INT</text>
+<rect x="561" y="1082" width="398" height="22" fill="#fff4e6"/>
+<text x="570" y="1097" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="570" y="1097" font-size="12" fill="#374151" font-weight="400">walk_min / all_climate</text>
+<text x="952" y="1097" font-size="11" fill="#868e96" text-anchor="end">INT/BOOL</text>
+</g>
+<g>
+<rect x="1120" y="120" width="400" height="132" rx="10" fill="#ffffff" stroke="#7048e8" stroke-width="1.8"/>
+<path d="M1120 130 Q1120 120 1130 120 L1510 120 Q1520 120 1520 130 L1520 156 L1120 156 Z" fill="#7048e8"/>
+<text x="1132" y="144" font-size="15" font-weight="800" fill="#ffffff">STATION · 地铁站</text>
+<text x="1508" y="144" font-size="11" fill="rgba(255,255,255,.85)" text-anchor="end">TRANSIT.stations</text>
+<text x="1130" y="171" font-size="12" fill="#b91c1c" font-weight="700">🔑</text>
+<text x="1152" y="171" font-size="12" fill="#374151" font-weight="400">id</text>
+<text x="1512" y="171" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+<rect x="1121" y="178" width="398" height="22" fill="#f3f0ff"/>
+<text x="1130" y="193" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="1130" y="193" font-size="12" fill="#374151" font-weight="400">ko / zh</text>
+<text x="1512" y="193" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+<text x="1468" y="193" font-size="11" fill="#6b7280" text-anchor="end">韩/中文站名</text>
+<text x="1130" y="215" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="1130" y="215" font-size="12" fill="#374151" font-weight="400">climate</text>
+<text x="1512" y="215" font-size="11" fill="#868e96" text-anchor="end">BOOL</text>
+<text x="1468" y="215" font-size="11" fill="#6b7280" text-anchor="end">气候卡可用</text>
+<rect x="1121" y="222" width="398" height="22" fill="#f3f0ff"/>
+<text x="1130" y="237" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="1130" y="237" font-size="12" fill="#374151" font-weight="400">lat / lng</text>
+<text x="1512" y="237" font-size="11" fill="#868e96" text-anchor="end">REAL</text>
+<text x="1468" y="237" font-size="11" fill="#6b7280" text-anchor="end">站点坐标</text>
+</g>
+<g>
+<rect x="1120" y="310" width="400" height="132" rx="10" fill="#ffffff" stroke="#7048e8" stroke-width="1.8"/>
+<path d="M1120 320 Q1120 310 1130 310 L1510 310 Q1520 310 1520 320 L1520 346 L1120 346 Z" fill="#7048e8"/>
+<text x="1132" y="334" font-size="15" font-weight="800" fill="#ffffff">LINE · 线路</text>
+<text x="1508" y="334" font-size="11" fill="rgba(255,255,255,.85)" text-anchor="end">TRANSIT.lines</text>
+<text x="1130" y="361" font-size="12" fill="#b91c1c" font-weight="700">🔑</text>
+<text x="1152" y="361" font-size="12" fill="#374151" font-weight="400">id</text>
+<text x="1512" y="361" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+<text x="1468" y="361" font-size="11" fill="#6b7280" text-anchor="end">L1/L2/…/GJ/AR…</text>
+<rect x="1121" y="368" width="398" height="22" fill="#f3f0ff"/>
+<text x="1130" y="383" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="1130" y="383" font-size="12" fill="#374151" font-weight="400">name</text>
+<text x="1512" y="383" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+<text x="1130" y="405" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="1130" y="405" font-size="12" fill="#374151" font-weight="400">color</text>
+<text x="1512" y="405" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+<rect x="1121" y="412" width="398" height="22" fill="#f3f0ff"/>
+<text x="1130" y="427" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="1130" y="427" font-size="12" fill="#374151" font-weight="400">fam</text>
+<text x="1512" y="427" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+<text x="1468" y="427" font-size="11" fill="#6b7280" text-anchor="end">线路族(L2B→L2)</text>
+</g>
+<g>
+<rect x="1120" y="500" width="400" height="110" rx="10" fill="#ffffff" stroke="#7048e8" stroke-width="1.8"/>
+<path d="M1120 510 Q1120 500 1130 500 L1510 500 Q1520 500 1520 510 L1520 536 L1120 536 Z" fill="#7048e8"/>
+<text x="1132" y="524" font-size="15" font-weight="800" fill="#ffffff">LINE_STOP · 线路站点</text>
+<text x="1508" y="524" font-size="11" fill="rgba(255,255,255,.85)" text-anchor="end">关联实体</text>
+<text x="1130" y="551" font-size="12" fill="#b91c1c" font-weight="700">🔑</text>
+<text x="1152" y="551" font-size="12" fill="#374151" font-weight="400">line_id</text>
+<text x="1512" y="551" font-size="11" fill="#868e96" text-anchor="end">→ LINE</text>
+<rect x="1121" y="558" width="398" height="22" fill="#f3f0ff"/>
+<text x="1130" y="573" font-size="12" fill="#b91c1c" font-weight="700">🔑</text>
+<text x="1152" y="573" font-size="12" fill="#374151" font-weight="400">station_id</text>
+<text x="1512" y="573" font-size="11" fill="#868e96" text-anchor="end">→ STATION</text>
+<text x="1130" y="595" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="1130" y="595" font-size="12" fill="#374151" font-weight="400">seq</text>
+<text x="1512" y="595" font-size="11" fill="#868e96" text-anchor="end">INT</text>
+<text x="1474.5" y="595" font-size="11" fill="#6b7280" text-anchor="end">线路内顺序</text>
+</g>
+<g>
+<rect x="1120" y="680" width="400" height="110" rx="10" fill="#ffffff" stroke="#7048e8" stroke-width="1.8"/>
+<path d="M1120 690 Q1120 680 1130 680 L1510 680 Q1520 680 1520 690 L1520 716 L1120 716 Z" fill="#7048e8"/>
+<text x="1132" y="704" font-size="15" font-weight="800" fill="#ffffff">STATION_EDGE · 站间连接</text>
+<text x="1508" y="704" font-size="11" fill="rgba(255,255,255,.85)" text-anchor="end">派生</text>
+<text x="1130" y="731" font-size="12" fill="#b91c1c" font-weight="700">🔑</text>
+<text x="1152" y="731" font-size="12" fill="#374151" font-weight="400">from</text>
+<text x="1512" y="731" font-size="11" fill="#868e96" text-anchor="end">→ STATION</text>
+<text x="1430" y="731" font-size="11" fill="#6b7280" text-anchor="end">相邻站A</text>
+<rect x="1121" y="738" width="398" height="22" fill="#f3f0ff"/>
+<text x="1130" y="753" font-size="12" fill="#b91c1c" font-weight="700">🔑</text>
+<text x="1152" y="753" font-size="12" fill="#374151" font-weight="400">to</text>
+<text x="1512" y="753" font-size="11" fill="#868e96" text-anchor="end">→ STATION</text>
+<text x="1430" y="753" font-size="11" fill="#6b7280" text-anchor="end">相邻站B</text>
+<text x="1130" y="775" font-size="12" fill="#374151" font-weight="400"></text>
+<text x="1130" y="775" font-size="12" fill="#374151" font-weight="400">fam</text>
+<text x="1512" y="775" font-size="11" fill="#868e96" text-anchor="end">TEXT</text>
+<text x="1468" y="775" font-size="11" fill="#6b7280" text-anchor="end">所属线路族</text>
+</g>
+<line x1="220" y1="310" x2="220" y2="256" stroke="#2f9e44" stroke-width="1.8"/>
+<text x="220" y="278" font-size="11.5" font-weight="700" fill="#2f9e44" text-anchor="middle">N : M 所属分队</text>
+<line x1="560" y1="180" x2="400" y2="188" stroke="#2f9e44" stroke-width="1.8"/>
+<text x="480" y="179" font-size="11.5" font-weight="700" fill="#2f9e44" text-anchor="middle">N : M</text>
+<line x1="560" y1="300" x2="400" y2="390" stroke="#2f9e44" stroke-width="1.8"/>
+<text x="480" y="340" font-size="11.5" font-weight="700" fill="#2f9e44" text-anchor="middle">N : M</text>
+<line x1="560" y1="400" x2="400" y2="584" stroke="#2f9e44" stroke-width="1.8"/>
+<text x="480" y="487" font-size="11.5" font-weight="700" fill="#2f9e44" text-anchor="middle">N : 1</text>
+<line x1="560" y1="430" x2="400" y2="734" stroke="#2f9e44" stroke-width="1.8"/>
+<text x="480" y="577" font-size="11.5" font-weight="700" fill="#2f9e44" text-anchor="middle">N : 1</text>
+<line x1="960" y1="220" x2="1120" y2="176" stroke="#7048e8" stroke-width="1.8"/>
+<text x="1000" y="165" font-size="11.5" font-weight="700" fill="#7048e8" text-anchor="middle">N : 1 最近地铁站</text>
+<line x1="760" y1="520" x2="760" y2="448" stroke="#e8590c" stroke-width="1.8" stroke-dasharray="7,5"/>
+<text x="910" y="484" font-size="11.5" font-weight="700" fill="#e8590c" text-anchor="middle">IS-A（结构同地点）</text>
+<path d="M 560 300 L 510 300 L 510 828 L 560 828" fill="none" stroke="#e8590c" stroke-width="1.8"/>
+<text x="500" y="570" font-size="11.5" font-weight="700" fill="#e8590c" text-anchor="middle">N : M 勾选地点</text>
+<path d="M 960 815 L 1020 815 L 1020 210 L 1120 210" fill="none" stroke="#e8590c" stroke-width="1.8"/>
+<text x="1055" y="520" font-size="11.5" font-weight="700" fill="#e8590c" text-anchor="middle">出发站</text>
+<line x1="760" y1="980" x2="760" y2="896" stroke="#e8590c" stroke-width="1.8"/>
+<text x="905" y="938" font-size="11.5" font-weight="700" fill="#e8590c" text-anchor="middle">1 : N 生成行程段</text>
+<line x1="1320" y1="500" x2="1320" y2="446" stroke="#7048e8" stroke-width="1.8"/>
+<text x="1405" y="473" font-size="11.5" font-weight="700" fill="#7048e8" text-anchor="middle">N : 1 属于线路</text>
+<path d="M 1120 540 L 1075 540 L 1075 235 L 1120 235" fill="none" stroke="#7048e8" stroke-width="1.8"/>
+<text x="1045" y="400" font-size="11.5" font-weight="700" fill="#7048e8" text-anchor="middle">N : M 经停(含顺序)</text>
+<path d="M 1520 368 L 1550 368 L 1550 736 L 1520 736" fill="none" stroke="#7048e8" stroke-width="1.8" stroke-dasharray="7,5"/>
+<text x="1568" y="560" font-size="11.5" font-weight="700" fill="#7048e8" text-anchor="middle">由相邻站生成</text>
+<path d="M 1520 700 L 1580 700 L 1580 188 L 1520 188" fill="none" stroke="#7048e8" stroke-width="1.8"/>
+<text x="1592" y="450" font-size="11.5" font-weight="700" fill="#7048e8" text-anchor="middle">1 : N 相邻站</text>
+</svg></div>
+
+  <h2>📦 分表清单（含当前真实数据量）</h2>
+  <table>
+    <tr><th>表</th><th>归属</th><th>存储位置</th><th>当前数量</th><th>主键</th><th>说明</th></tr>
+    <tr><td><span class="tag t-green">UNIT 分队</span></td><td>成员/分队</td><td><code>js/data.js</code></td><td>5</td><td>id</td><td>NCT 全体 / 127 / DREAM / WayV / WISH</td></tr>
+    <tr><td><span class="tag t-green">MEMBER 成员</span></td><td>成员/分队</td><td><code>js/data.js</code></td><td>25</td><td>id</td><td>别名、生日（年龄排序）、退团标记；units[] 多值外键支持跨队成员</td></tr>
+    <tr><td><span class="tag t-green">TYPE 类型</span></td><td>成员/分队</td><td><code>js/data.js</code></td><td>9</td><td>type</td><td>美食 / 咖啡 / 购物 / 快闪 / 拍摄地 / 拍照打卡点 / 展览 / 演出场地 / 官方周边</td></tr>
+    <tr><td><span class="tag t-green">CATEGORY 分类</span></td><td>成员/分队</td><td><code>js/data.js</code></td><td>2</td><td>category</td><td>store（同款店铺）/ spot（拍照打卡点）</td></tr>
+    <tr><td><span class="tag t-blue">PLACE 地点</span></td><td>地点</td><td><code>js/data.js</code></td><td>160</td><td>id</td><td>同款店铺/拍照打卡点；type/category/units[]/members[]/station 为外键</td></tr>
+    <tr><td><span class="tag t-orange">CUSTOM_PLACE 自定义地点</span></td><td>自定义</td><td>localStorage</td><td>用户自增</td><td>id</td><td>结构同 PLACE（custom=true），可导出 JSON 合并进 data.js</td></tr>
+    <tr><td><span class="tag t-purple">STATION 地铁站</span></td><td>交通</td><td><code>js/transit.js</code></td><td>223</td><td>id</td><td>韩/中文站名、气候卡可用性、站点坐标（出发地→最近地铁站匹配）</td></tr>
+    <tr><td><span class="tag t-purple">LINE 线路</span></td><td>交通</td><td><code>js/transit.js</code></td><td>17</td><td>id</td><td>1~9 号线、盆唐、京义中央、机场铁路等；fam 线路族（L2B→L2）</td></tr>
+    <tr><td><span class="tag t-purple">LINE_STOP 线路站点</span></td><td>交通</td><td>派生（LINE.stops）</td><td>292</td><td>line_id+station_id</td><td>关联实体：线路 × 站点 + 顺序 seq</td></tr>
+    <tr><td><span class="tag t-purple">STATION_EDGE 站间连接</span></td><td>交通</td><td>派生（相邻站）</td><td>—</td><td>from+to</td><td>Dijkstra 最短路 / 换乘计算的基础</td></tr>
+    <tr><td><span class="tag t-orange">ROUTE_PLAN 路线规划</span></td><td>运行时</td><td>内存（不持久化）</td><td>—</td><td>—</td><td>出发地址、最近地铁站、勾选地点、TSP 最优顺序</td></tr>
+    <tr><td><span class="tag t-orange">TRANSIT_LEG 行程段</span></td><td>运行时</td><td>派生</td><td>—</td><td>—</td><td>每两站之间：线路、换乘、耗时、步行、气候卡可用性</td></tr>
+  </table>
+
+  <h2>🔗 表间关系（基数）</h2>
+  <table>
+    <tr><th>关系</th><th>基数</th><th>实现方式</th></tr>
+    <tr><td>MEMBER — UNIT（成员所属分队）</td><td>N : M</td><td>MEMBER.units[] → UNIT.id（多值外键）</td></tr>
+    <tr><td>PLACE — UNIT（地点所属分队）</td><td>N : M</td><td>PLACE.units[] → UNIT.id</td></tr>
+    <tr><td>PLACE — MEMBER（地点与成员同款）</td><td>N : M</td><td>PLACE.members[] → MEMBER.id</td></tr>
+    <tr><td>PLACE — TYPE（地点类型）</td><td>N : 1</td><td>PLACE.type → TYPE.type</td></tr>
+    <tr><td>PLACE — CATEGORY（地点分类）</td><td>N : 1</td><td>PLACE.category → CATEGORY.category</td></tr>
+    <tr><td>PLACE — STATION（最近地铁站）</td><td>N : 1</td><td>PLACE.station 文本 → TRANSIT.resolveStation()</td></tr>
+    <tr><td>CUSTOM_PLACE — PLACE</td><td>IS-A</td><td>继承地点全部字段，custom=true 区分</td></tr>
+    <tr><td>LINE — STATION（线路经停站点）</td><td>N : M</td><td>关联实体 LINE_STOP（line_id + station_id + seq）</td></tr>
+    <tr><td>STATION — STATION（相邻站）</td><td>1 : N</td><td>派生 STATION_EDGE（含线路族，用于耗时/换乘）</td></tr>
+    <tr><td>ROUTE_PLAN — PLACE（勾选地点）</td><td>N : M</td><td>selected[] / order[]</td></tr>
+    <tr><td>ROUTE_PLAN — STATION（出发站）</td><td>N : 1</td><td>origin_station（地址→最近地铁站）</td></tr>
+    <tr><td>ROUTE_PLAN — TRANSIT_LEG（生成行程段）</td><td>1 : N</td><td>每段含 via_stations、换乘、气候卡标注</td></tr>
+  </table>
+
+  <div class="note">💡 <b>说明</b>：① 搜索索引（searchIndex）与筛选状态是运行时派生数据，不属于持久化模型；② 自定义地点与内置地点共用同一结构，仅在 <code>custom</code> 字段区分；③ 坐标均为约略值，导航请以 Naver Map / 谷歌地图为准。</div>
+</div>
+</body>
+</html>
