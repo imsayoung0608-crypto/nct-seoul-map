@@ -264,13 +264,7 @@
       div.appendChild(ds);
     }
 
-    div.addEventListener('click', function () {
-      var mk = markers[p.id];
-      if (mk) {
-        map.flyTo([p.lat, p.lng], Math.max(map.getZoom(), 15), { duration: 0.6 });
-        setTimeout(function () { mk.openPopup(); }, 650);
-      }
-    });
+    div.addEventListener('click', function () { openSpot(p); });
     return div;
   }
 
@@ -287,8 +281,7 @@
     for (var j = 0; j < hits.length; j++) {
       var p = hits[j];
       var mk = L.marker([p.lat, p.lng], { icon: markerIcon(p) });
-      mk.bindPopup(popupHtml(p), { maxWidth: 340 });
-      mk.on('click', function () { mk.openPopup(); });
+      (function (pl, m) { m.on('click', function () { openSpot(pl); }); })(p, mk);
       window.__layer.addLayer(mk);
       markers[p.id] = mk;
       list.appendChild(cardHtml(p));
@@ -760,7 +753,80 @@
   }
 
   /* ================= 用户添加地点 ================= */
+  /* ================= 添加地点：Naver 链接解析 / 地图点选坐标 ================= */
+  var pick = { active: false, marker: null };
+
+  function parseNaverPaste(txt) {
+    var s = String(txt || '').trim();
+    if (!s) return null;
+    var out = { name: '', lat: null, lng: null, isNaver: false };
+    if (/naver\.|nmap:\/\/|naver\.me/i.test(s)) out.isNaver = true;
+    var qm = s.match(/[?&](?:name|placeName|query|keyword|text)=([^&#]+)/i);
+    if (qm) { try { out.name = decodeURIComponent(qm[1]).replace(/\+/g, ' '); } catch (e) { out.name = qm[1]; } }
+    var sm = s.match(/map\.naver\.com\/[^?&#]*(?:search|place)\/([^?&#]+)/i);
+    if (!out.name && sm) { try { out.name = decodeURIComponent(sm[1]).replace(/\+/g, ' '); } catch (e) { out.name = sm[1]; } }
+    var qsi = s.indexOf('?');
+    var params = {};
+    if (qsi >= 0) s.slice(qsi + 1).split('&').forEach(function (kv) {
+      var i2 = kv.indexOf('='); if (i2 < 0) return;
+      var k = kv.slice(0, i2); var v = kv.slice(i2 + 1);
+      try { params[k.toLowerCase()] = decodeURIComponent(v); } catch (e) { params[k.toLowerCase()] = v; }
+    });
+    function num(v) { if (v == null || v === '') return null; var nn = parseFloat(String(v).replace(/,/g, '.')); return isFinite(nn) ? nn : null; }
+    if (params.lat != null && params.lng != null) { out.lat = num(params.lat); out.lng = num(params.lng); }
+    if (out.lat == null && params.ll) { var ll = String(params.ll).split(','); if (ll.length >= 2) { out.lat = num(ll[0]); out.lng = num(ll[1]); } }
+    if (out.lat == null && params.c) { var cc = String(params.c).split(','); if (cc.length >= 2) { out.lat = num(cc[0]); out.lng = num(cc[1]); } }
+    if (out.lat == null) {
+      var m2 = /^(-?\d{1,3}(\.\d+)?)\s*[,，]\s*(-?\d{1,3}(\.\d+)?)$/.exec(s);
+      if (m2) { out.lat = num(m2[1]); out.lng = num(m2[3]); }
+    }
+    if (out.lat != null && (out.lat < 37 || out.lat > 38.2 || out.lng < 126 || out.lng > 128.2)) { out.lat = null; out.lng = null; }
+    return out;
+  }
+
+  function applyNaverAutofill() {
+    var g = function (id) { return document.getElementById(id); };
+    var text = (g('ap-address') ? g('ap-address').value : '') + ' ' + (g('ap-nameko') ? g('ap-nameko').value : '');
+    var r = parseNaverPaste(text);
+    if (!r) return;
+    var changed = false;
+    if (r.lat != null && !g('ap-lat').value) { g('ap-lat').value = r.lat; changed = true; }
+    if (r.lng != null && !g('ap-lng').value) { g('ap-lng').value = r.lng; changed = true; }
+    if (r.name && !g('ap-name').value && !g('ap-nameko').value) { g('ap-nameko').value = r.name; changed = true; }
+    if (r.isNaver && changed) {
+      apMsg(r.lat != null ? '✅ 已从 Naver 链接自动识别坐标 (' + r.lat + ', ' + r.lng + ')，可直接保存' : 'ℹ️ 已识别 Naver 地点「' + esc(r.name) + '」；如需坐标可点“在地图上点选坐标”', true);
+    }
+  }
+
+  function cancelPick() {
+    pick.active = false;
+    if (pick.marker) { map.removeLayer(pick.marker); pick.marker = null; }
+    var m = document.getElementById('map'); if (m) m.classList.remove('picking');
+  }
+
+  function pickFromMap() {
+    var modal = document.getElementById('add-modal');
+    if (pick.active) { cancelPick(); if (modal) modal.hidden = false; apMsg('已取消点选。', true); return; }
+    if (modal) modal.hidden = true;
+    pick.active = true;
+    var mm = document.getElementById('map'); if (mm) mm.classList.add('picking');
+    toast('🗺 请在地图上点击要添加的位置（手机请先开 📍 地图操作；Esc 取消）');
+    map.once('click', function (e) {
+      var lat = Math.round(e.latlng.lat * 1e6) / 1e6;
+      var lng = Math.round(e.latlng.lng * 1e6) / 1e6;
+      if (pick.marker) map.removeLayer(pick.marker);
+      pick.marker = L.marker([lat, lng], { icon: L.divIcon({ className: 'pin-wrap', html: '<div class="pin" style="--c:#84e82c"></div>', iconSize: [30, 30], iconAnchor: [15, 30] }) }).addTo(map);
+      pick.active = false;
+      var m3 = document.getElementById('map'); if (m3) m3.classList.remove('picking');
+      var latEl = document.getElementById('ap-lat'); if (latEl) latEl.value = lat;
+      var lngEl = document.getElementById('ap-lng'); if (lngEl) lngEl.value = lng;
+      if (modal) modal.hidden = false;
+      apMsg('✅ 已点选坐标：' + lat + ', ' + lng + ' → 点「保存并加入地图」即可', true);
+    });
+  }
+
   function initAddPlace() {
+
     var btn = document.getElementById('add-place-btn');
     var modal = document.getElementById('add-modal');
     if (!btn || !modal) return;
@@ -783,6 +849,15 @@
       modal.hidden = !modal.hidden;
       apMsg('', true);
     });
+    var pickB = document.getElementById('ap-pick');
+    if (pickB) pickB.addEventListener('click', pickFromMap);
+    var bindAutofill = function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      var t = null;
+      el.addEventListener('input', function () { clearTimeout(t); t = setTimeout(applyNaverAutofill, 350); });
+    };
+    bindAutofill('ap-address'); bindAutofill('ap-nameko'); bindAutofill('ap-name');
     document.getElementById('ap-cancel').addEventListener('click', function () { modal.hidden = true; });
     document.getElementById('ap-save').addEventListener('click', addPlaceSubmit);
     document.getElementById('ap-export').addEventListener('click', function () {
@@ -870,12 +945,261 @@
       if (g) {
         finish({ lat: g.lat, lng: g.lng });
       } else {
-        apMsg('⚠️ 自动定位失败，请在上方「纬度 / 经度」手动填写坐标（可在 Naver Map 上右键查看），或换用韩文地址重试。', false);
+        apMsg('⚠️ 自动定位失败。可试试：① 粘贴含坐标的 <b>Naver Map 分享链接</b>到地址栏；② 点「🗺 在地图上点选坐标」；③ 换更完整的<b>韩文地址</b>重试。', false);
       }
     });
   }
 
+  /* ================= v4 NEO：详情滑出面板 / 收藏清单 / 随机抽卡 / 预设路线 ================= */
+  var BUCKET_KEY = 'nct_bucket_v1';
+  var bucket = loadBucket();
+  function loadBucket() {
+    try { var raw = localStorage.getItem(BUCKET_KEY); var arr = raw ? JSON.parse(raw) : []; return Array.isArray(arr) ? arr : []; }
+    catch (e) { return []; }
+  }
+  function saveBucket() { try { localStorage.setItem(BUCKET_KEY, JSON.stringify(bucket)); } catch (e) {} }
+  var curSpot = null;
+  var curSpotFav = false;
+
+  function toast(msg) {
+    var el = document.getElementById('dp-toast');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { el.classList.remove('show'); }, 2200);
+  }
+
+  function categoryLabel(c) { return c === 'spot' ? '拍照打卡点' : '同款店铺'; }
+
+  function openSpot(p) {
+    if (!p) return;
+    curSpot = p;
+    curSpotFav = bucket.indexOf(p.id) >= 0;
+    if (map) { map.closePopup(); map.flyTo([p.lat, p.lng], Math.max(map.getZoom(), 14), { duration: 0.5 }); }
+    fillDetail(p);
+    openPanel();
+  }
+
+  function openPanel() {
+    var scrim = document.getElementById('dp-scrim');
+    var panel = document.getElementById('detail-panel');
+    if (scrim) scrim.hidden = false;
+    if (panel) { panel.classList.add('open'); panel.setAttribute('aria-hidden', 'false'); }
+    setTimeout(function () { if (scrim) scrim.classList.add('show'); }, 10);
+    refreshFavBtn();
+  }
+  function closePanel() {
+    var scrim = document.getElementById('dp-scrim');
+    var panel = document.getElementById('detail-panel');
+    if (scrim) scrim.classList.remove('show');
+    if (panel) { panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'true'); }
+    setTimeout(function () { if (scrim) scrim.hidden = true; }, 220);
+  }
+
+  function fillDetail(p) {
+    var eb = document.getElementById('dp-eyebrow');
+    if (eb) eb.textContent = 'NCT SPOT · ' + (p.custom ? 'CUSTOM' : categoryLabel(p.category).toUpperCase());
+    var body = document.getElementById('dp-body');
+    if (!body) return;
+    var h = [];
+    h.push('<div class="dp-title">' + esc(p.name) + '</div>');
+    if (p.nameKo) h.push('<div class="dp-ko">' + esc(p.nameKo) + '</div>');
+    h.push('<div class="dp-type-badges">');
+    p.units.forEach(function (u) { if (UNITS[u]) h.push('<span class="badge badge-unit" style="background:' + UNITS[u].color + '">' + esc(UNITS[u].name) + '</span>'); });
+    p.members.forEach(function (m) { h.push(memberBadgeHtml(m)); });
+    h.push('<span class="badge badge-type">' + esc(p.type) + '</span>');
+    if (p.custom) h.push('<span class="badge badge-type badge-custom">自定义</span>');
+    h.push('</div>');
+    if (p.desc) h.push('<p class="dp-desc">' + esc(p.desc) + '</p>');
+    if (p.members && p.members.length) {
+      h.push('<div class="dp-section">👥 谁去过</div>');
+      h.push('<div class="dp-members">' + p.members.map(function (m) { var mm = getMember(m); return mm ? '<span class="badge badge-member' + (mm.departed ? ' departed' : '') + '">' + esc(mm.name) + (mm.departed ? ' 已退团' : '') + '</span>' : ''; }).join('') + '</div>');
+    }
+    h.push('<div class="dp-section">📍 基本信息</div>');
+    h.push('<table class="dp-table">');
+    if (p.addressKo) h.push('<tr><td>韩文地址</td><td>' + esc(p.addressKo) + '</td></tr>');
+    if (p.address) h.push('<tr><td>中文地址</td><td>' + esc(p.address) + '</td></tr>');
+    if (p.station) h.push('<tr><td>交通</td><td>' + esc(p.station) + '</td></tr>');
+    if (p.hours) h.push('<tr><td>营业时间</td><td>' + esc(p.hours) + '</td></tr>');
+    h.push('</table>');
+    if (p.source) h.push('<p class="dp-source">🔗 <a href="' + esc(p.source) + '" target="_blank" rel="noopener">资料来源 / 相关讨论</a></p>');
+    body.innerHTML = h.join('');
+  }
+
+  function refreshFavBtn() {
+    var b = document.getElementById('dp-fav');
+    if (b) { b.innerHTML = curSpotFav ? '❤️ 已收藏' : '🤍 收藏'; b.classList.toggle('on', curSpotFav); }
+  }
+
+  function toggleFav() {
+    if (!curSpot) return;
+    var i = bucket.indexOf(curSpot.id);
+    if (i >= 0) { bucket.splice(i, 1); curSpotFav = false; toast('已从打卡清单移除'); }
+    else { bucket.push(curSpot.id); curSpotFav = true; toast('已加入 ❤️ 我的打卡清单'); }
+    saveBucket(); refreshFavBtn(); renderBucketCount();
+  }
+
+  function favNames() {
+    return bucket.map(function (id) { return findPlace(id); }).filter(Boolean);
+  }
+  function renderBucketCount() {
+    var a = document.getElementById('fab-bucket-count');
+    if (a) a.textContent = bucket.length;
+  }
+
+  function openBucket() {
+    var d = document.getElementById('bucket-drawer');
+    var list = document.getElementById('bucket-list');
+    if (!d || !list) return;
+    list.innerHTML = '';
+    var items = favNames();
+    if (!items.length) {
+      list.innerHTML = '<div class="bucket-empty">还没有收藏地点～ 在地点详情里点 🤍 收藏即可加入。</div>';
+    } else {
+      items.forEach(function (p) {
+        var row = document.createElement('div');
+        row.className = 'bucket-item';
+        var del = document.createElement('button');
+        del.className = 'b-del'; del.textContent = '✕'; del.title = '移除';
+        (function (pid) { del.addEventListener('click', function (e) { e.stopPropagation(); var i = bucket.indexOf(pid); if (i >= 0) bucket.splice(i, 1); saveBucket(); renderBucketCount(); openBucket(); }); })(p.id);
+        var name = document.createElement('span');
+        name.textContent = p.name;
+        row.appendChild(del); row.appendChild(name);
+        (function (pp) { row.addEventListener('click', function () { closeBucket(); openSpot(pp); }); })(p);
+        list.appendChild(row);
+      });
+    }
+    d.classList.add('open'); d.setAttribute('aria-hidden', 'false');
+  }
+  function closeBucket() {
+    var d = document.getElementById('bucket-drawer');
+    if (d) { d.classList.remove('open'); d.setAttribute('aria-hidden', 'true'); }
+  }
+  function clearBucket() { bucket = []; saveBucket(); renderBucketCount(); openBucket(); toast('已清空打卡清单'); }
+
+  function exportTicket() {
+    var items = favNames();
+    var c = document.createElement('canvas');
+    c.width = 720; c.height = 430;
+    var ctx = c.getContext ? c.getContext('2d') : null;
+    if (!ctx) { toast('导出失败，请重试'); return; }
+    ctx.fillStyle = '#0d0d10'; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.strokeStyle = '#84e82c'; ctx.lineWidth = 3;
+    ctx.strokeRect(22, 62, c.width - 44, c.height - 84);
+    ctx.fillStyle = '#84e82c';
+    ctx.font = '700 24px Arial'; ctx.fillText('NCT SEOUL MAP · MY BUCKET LIST', 46, 112);
+    ctx.fillStyle = '#a9ff4f'; ctx.font = '14px Arial'; ctx.fillText('my NCT pilgrimage · 我的打卡清单', 46, 138);
+    if (!items.length) { ctx.fillStyle = '#888'; ctx.font = '16px Arial'; ctx.fillText('( empty ) 还没有收藏地点', 46, 210); }
+    else {
+      ctx.fillStyle = '#ececf1'; ctx.font = '15px Arial';
+      var y = 186;
+      items.slice(0, 8).forEach(function (p, idx) {
+        ctx.fillText((idx + 1) + '. ' + p.name + (p.nameKo ? '  ·  ' + p.nameKo : ''), 50, y);
+        y += 28;
+      });
+      if (items.length > 8) { ctx.fillStyle = '#9a9aa6'; ctx.fillText('… 还有 ' + (items.length - 8) + ' 个地点', 50, y + 4); }
+    }
+    ctx.fillStyle = '#6b6b78'; ctx.font = '12px Arial';
+    ctx.fillText('nct-seoul-map · 共 ' + items.length + ' 个打卡点 · 坐标约略，请以 Naver Map 为准', 46, c.height - 26);
+    ctx.fillStyle = '#0d0d10';
+    for (var i = 0; i < 7; i++) { ctx.beginPath(); ctx.arc(100 + i * 90, 62, 10, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(100 + i * 90, c.height - 22, 10, 0, 7); ctx.fill(); }
+    var url = c.toDataURL('image/png');
+    var a = document.createElement('a');
+    a.href = url; a.download = 'nct-bucket-list.png'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    toast('🎫 打卡门票已导出（PNG）');
+  }
+
+  function roulette() {
+    var all = allPlaces();
+    if (!all.length) return;
+    var p = all[Math.floor(Math.random() * all.length)];
+    openSpot(p);
+    toast('🎰 今天去：「' + p.name + '」');
+  }
+
+  var PRESET_ROUTES = [
+    { icon: '🌆', name: '圣水洞 NEO 一日游', sub: '同款咖啡·杂货·SM 大楼', ids: ['heavensense', 'cosrxstage35', 'eptseongsu', 'seongsudarak', 'kwangya'] },
+    { icon: '🌿', name: '汉南·梨泰院 圣地巡礼', sub: '氛围咖啡与 Gucci 家屋', ids: ['anthracite', 'cafelesens', 'guccihouse', 'thebaek'] },
+    { icon: '🛍️', name: '江南 COEX 圣地线', sub: '星空图书馆 & 周边店', ids: ['starfieldlibrary', 'starfieldcoexmv', 'gabaedocoex', 'damongjip', 'daewoobudae'] },
+    { icon: '🎬', name: 'NCT 127 MV 巡礼线', sub: '《Fact Check》拍摄地', ids: ['gyeongbokgung', 'inhyeonsangga', 'ifcmall', 'sewoon', 'seongsumural'] }
+  ];
+
+  function buildPresets() {
+    var box = document.getElementById('preset-routes');
+    if (!box) return;
+    PRESET_ROUTES.forEach(function (r) {
+      var btn = document.createElement('button');
+      btn.className = 'preset-route';
+      btn.type = 'button';
+      btn.innerHTML = '<span class="pr-icon">' + r.icon + '</span><span><span class="pr-name">' + esc(r.name) + '</span><br><span class="pr-sub">' + esc(r.sub) + '</span></span>';
+      (function (rr) { btn.addEventListener('click', function () { usePreset(rr); }); })(r);
+      box.appendChild(btn);
+    });
+  }
+
+  function usePreset(rr) {
+    route.mode = true;
+    route.ids = rr.ids.slice();
+    var toggle = document.getElementById('route-toggle');
+    var panel = document.getElementById('route-panel');
+    if (toggle) toggle.classList.add('on');
+    if (panel) panel.classList.add('open');
+    var ap = document.getElementById('app'); if (ap) ap.classList.add('route-on');
+    var rc = document.getElementById('route-count'); if (rc) rc.textContent = '已选 ' + route.ids.length + ' 个地点';
+    setRouteMsg('🎫 已载入预设路线「' + rr.name + '」，正在规划…');
+    render();
+    setTimeout(planRoute, 250);
+  }
+
+  function naverMapUrl(p) {
+    var q = p.nameKo || p.addressKo || p.name;
+    return 'https://map.naver.com/p/search/' + encodeURIComponent(q);
+  }
+  function googleMapUrl(p) {
+    var q = p.name + (p.nameKo ? ' ' + p.nameKo : '') + ' ' + (p.addressKo || p.address || '');
+    return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
+  }
+  function copyAddress() {
+    if (!curSpot) return;
+    var txt = curSpot.nameKo || curSpot.addressKo || curSpot.address || curSpot.name;
+    function done(ok) { toast(ok ? '📋 已复制韩文地址' : '复制失败，请长按手动复制'); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(function () { done(true); }, function () { done(false); });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = txt; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(true); } catch (e) { done(false); }
+      document.body.removeChild(ta);
+    }
+  }
+
+  function initNeo() {
+    var byId = function (id) { return document.getElementById(id); };
+    var scrim = byId('dp-scrim'); if (scrim) scrim.addEventListener('click', closePanel);
+    var dclose = byId('dp-close'); if (dclose) dclose.addEventListener('click', closePanel);
+    var copyB = byId('dp-copy'); if (copyB) copyB.addEventListener('click', copyAddress);
+    var navB = byId('dp-naver'); if (navB) navB.addEventListener('click', function () { if (curSpot) window.open(naverMapUrl(curSpot), '_blank'); });
+    var goB = byId('dp-google'); if (goB) goB.addEventListener('click', function () { if (curSpot) window.open(googleMapUrl(curSpot), '_blank'); });
+    var favB = byId('dp-fav'); if (favB) favB.addEventListener('click', toggleFav);
+    var hr = byId('hdr-roulette'); if (hr) hr.addEventListener('click', roulette);
+    var fr = byId('fab-roulette'); if (fr) fr.addEventListener('click', roulette);
+    var fb = byId('fab-bucket'); if (fb) fb.addEventListener('click', openBucket);
+    var bc = byId('bucket-close'); if (bc) bc.addEventListener('click', closeBucket);
+    var bclear = byId('bucket-clear'); if (bclear) bclear.addEventListener('click', clearBucket);
+    var bexp = byId('bucket-export'); if (bexp) bexp.addEventListener('click', exportTicket);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        if (pick.active) { cancelPick(); var m2 = document.getElementById('add-modal'); if (m2) m2.hidden = false; apMsg('已取消点选。', true); return; }
+        closePanel(); closeBucket();
+      }
+    });
+    renderBucketCount();
+    buildPresets();
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
+
     initMap();
     buildFilters();
     syncChipClasses();
@@ -890,6 +1214,7 @@
     });
     indexAll();
     render();
+    initNeo();
     // 手机端「地图操作 / 页面浏览」切换
     var mmBtn = document.getElementById('map-mode-toggle');
     if (mmBtn) {
