@@ -579,3 +579,28 @@ button { font-family: inherit; }
 
 /* 键盘可点区域手感 */
 #sheet .sheet-head:active, #sheet .sheet-grip:active { opacity: .8; }
+
+/* =====================================================================
+   Fix：随机抽卡“点不开” —— 详情面板/清单抽屉在桌面端关闭时要完全移出屏幕
+   （旧写法只平移 100%+24px，导致一大截透明面板压住右侧列表与 🎰/❤️ 按钮）
+   + 桌面端让顶栏与列表栏浮在遮罩之上，详情打开时也能继续抽卡/收藏
+   ===================================================================== */
+#dp-toast { z-index: 1400 !important; }   /* Toast 永远在详情/遮罩之上，保证反馈可见 */
+
+@media (min-width: 768px) {
+  /* 桌面端：关闭 = 完全移出视口右侧 */
+  #detail-panel {
+    transform: translateX(calc(100% + var(--sheet-w) + 40px));
+  }
+  #detail-panel.open { transform: translateX(0); }
+
+  #bucket-drawer {
+    transform: translateX(calc(100% + var(--sheet-w) + 40px));
+  }
+  #bucket-drawer.open { transform: translateX(0); }
+
+  /* 顶栏与右侧列表面板浮在详情遮罩(1100)之上、详情面板(1200)之下：
+     详情打开时仍可继续点 🎰 重抽 / ❤️ 收藏，点地图区域仍可关闭详情 */
+  #topbar { z-index: 1150; }
+  #sheet   { z-index: 1150; }
+}
