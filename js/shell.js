@@ -270,3 +270,34 @@
     boot();
   }
 })();
+
+/* =====================================================================
+   Fix：随机抽卡“点不开” —— 列表栏/浮动 🎰 统一转发到顶部 🎰（实测可靠）
+   做法：克隆节点清除旧的（失效）点击监听，再绑定转发；避免重复触发
+   ===================================================================== */
+(function () {
+  'use strict';
+  if (window.__roulettePatched) return;
+  window.__roulettePatched = true;
+
+  function patch() {
+    var hr = document.getElementById('hdr-roulette');
+    function go() { if (hr) hr.click(); }
+    function swap(sel) {
+      var b = document.querySelector(sel);
+      if (!b) return;
+      var c = b.cloneNode(true);
+      if (b.parentNode) b.parentNode.replaceChild(c, b);
+      c.addEventListener('click', go);
+      c.setAttribute('title', '随机抽一个打卡点（Neo Roulette）');
+    }
+    swap('#fab-roulette');       // 桌面端列表栏 🎰
+    swap('#fab-roulette-float'); // 移动端浮动 🎰
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', patch);
+  } else {
+    patch();
+  }
+})();
