@@ -604,3 +604,24 @@ button { font-family: inherit; }
   #topbar { z-index: 1150; }
   #sheet   { z-index: 1150; }
 }
+
+/* Fix：列表栏内的 🎰/❤️ 不应沿用旧版 .fab 的 position:fixed
+   （否则会漂到列表卡片上被挡住，导致“点不开”） */
+#sheet .fab {
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  z-index: auto;
+  display: inline-flex;
+  animation: none !important;
+}
+
+/* Fix：详情/弹层打开时不再把背景地图“糊”掉 —— 去掉毛玻璃模糊，
+   只保留很淡的暗色用于聚焦，地图清晰可见 */
+.dp-scrim {
+  background: rgba(6, 7, 10, 0.16);
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+.dp-scrim.show { opacity: 1; }
