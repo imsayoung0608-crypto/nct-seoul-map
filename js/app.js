@@ -6,7 +6,7 @@
   var map = null;
   var markers = {};
   var firstRender = true;
-  var route = { mode: false, ids: [], layer: null };
+  var route = { mode: false, ids: [], layer: null, targetFolder: null, lastPlan: null, historySuppress: false };
   /* 地图图源（多源自动切换：OSM 加载失败时换下一个，兼容不同网络环境/国内访问） */
   var tileLayer = null;
   var tileProviderIdx = 0;
@@ -168,10 +168,18 @@
   function markerIcon(p) {
     var color = unitColor(p.units);
     var spot = p.category === 'spot';
+    var selected = route.ids.indexOf(p.id) >= 0;
     var html;
     if (p.custom) html = '<div class="pin pin-custom" style="--c:#e8590c"></div>';
     else html = '<div class="pin' + (spot ? ' pin-spot' : ' pin-store') + '" style="--c:' + color + '"></div>';
-    return L.divIcon({ className: 'pin-wrap', html: html, iconSize: [30, 34], iconAnchor: [15, 32], popupAnchor: [0, -30] });
+    if (route.mode) {
+      html = '<div class="pin-shell picking' + (selected ? ' selected' : '') + '">' + html
+        + '<span class="pin-pick' + (selected ? ' on' : '') + '">' + (selected ? '✓' : '＋') + '</span></div>';
+    } else {
+      html = '<div class="pin-shell">' + html + '</div>';
+    }
+    var size = route.mode ? [40, 44] : [30, 34];
+    return L.divIcon({ className: 'pin-wrap', html: html, iconSize: size, iconAnchor: [size[0] / 2, size[1] - 4], popupAnchor: [0, -size[1] + 6] });
   }
 
   function memberBadgeHtml(mid) {
@@ -210,13 +218,6 @@
     div.className = 'card' + (route.ids.indexOf(p.id) >= 0 ? ' selected' : '') + (p.custom ? ' card-custom' : '');
     var head = document.createElement('div');
     head.className = 'card-top';
-    var cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.className = 'card-check';
-    cb.checked = route.ids.indexOf(p.id) >= 0;
-    cb.title = '加入路线规划';
-    cb.addEventListener('click', function (e) { e.stopPropagation(); toggleRoutePlace(p.id); });
-    head.appendChild(cb);
     var name = document.createElement('span');
     name.className = 'card-name';
     name.textContent = p.name;
@@ -225,6 +226,14 @@
     tag.className = 'card-tag ' + (p.custom ? 'tag-custom' : (p.category === 'spot' ? 'tag-spot' : 'tag-store'));
     tag.textContent = p.custom ? '自定义' : (p.category === 'spot' ? '打卡' : '同款');
     head.appendChild(tag);
+    var pickBtn = document.createElement('button');
+    pickBtn.type = 'button';
+    var isPicked = route.ids.indexOf(p.id) >= 0;
+    pickBtn.className = 'card-route-pick' + (isPicked ? ' on' : '');
+    pickBtn.textContent = isPicked ? '✓ 已选' : '＋ 加入路线';
+    pickBtn.title = isPicked ? '点击从路线中移除' : '点击加入当前路线选择';
+    pickBtn.addEventListener('click', function (e) { e.stopPropagation(); toggleRoutePlace(p.id); });
+    head.appendChild(pickBtn);
     div.appendChild(head);
 
     var badges = document.createElement('div');
@@ -287,6 +296,7 @@
       list.appendChild(cardHtml(p));
     }
     document.getElementById('result-count').textContent = hits.length + ' / ' + all.length + ' 个地点';
+    syncRouteSelectionUI();
     if (firstRender) {
       map.setView([37.5665, 126.978], 12);
       firstRender = false;
@@ -426,11 +436,70 @@
   }
 
   /* ================= 路线规划（公共交通 + 气候卡标注） ================= */
+  /* ===== 规划历史（保存在本浏览器） ===== */
+  var ROUTE_HISTORY_KEY = 'nct_route_history_v1';
+  var routeHistory = loadRouteHistory();
+  var historyClearArmed = false;
+  function loadRouteHistory() {
+    try { var raw = localStorage.getItem(ROUTE_HISTORY_KEY); var arr = raw ? JSON.parse(raw) : []; return Array.isArray(arr) ? arr.slice(0, 30) : []; }
+    catch (e) { return []; }
+  }
+  function persistRouteHistory() { try { localStorage.setItem(ROUTE_HISTORY_KEY, JSON.stringify(routeHistory.slice(0, 30))); } catch (e) {} }
+  function routeHistoryId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function routeHistoryTime(ts) {
+    try { return new Date(ts).toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }); }
+    catch (e) { return ''; }
+  }
+  function addRouteHistory(entry) {
+    if (!entry || !entry.placeIds || entry.placeIds.length < 2) return;
+    routeHistory.unshift({ id:routeHistoryId(), ts:Date.now(), origin:entry.origin || '', placeIds:entry.placeIds.slice(), total:entry.total || null, hasOrigin:!!entry.hasOrigin });
+    routeHistory = routeHistory.slice(0, 30);
+    persistRouteHistory();
+    renderRouteHistory();
+  }
+  function renderRouteHistory() {
+    var list = document.getElementById('route-history-list');
+    if (!list) return;
+    if (!routeHistory.length) { list.innerHTML = '<div class="route-history-empty">还没有历史规划。完成一次最优路线规划后会自动记录。</div>'; return; }
+    var h = '';
+    routeHistory.forEach(function (it) {
+      var names = it.placeIds.map(function (id) { var p = findPlace(id); return p ? p.name : id; });
+      var title = it.hasOrigin ? '从 ' + (it.origin || '出发地') : '从第一站出发';
+      h += '<div class="route-history-item" data-hid="' + esc(it.id) + '"><div class="rhi-top"><b>' + esc(title) + '</b><time>' + esc(routeHistoryTime(it.ts)) + '</time></div>'
+        + '<div class="rhi-stops">' + esc(names.join(' → ')) + (it.total != null ? ' · <span class="rhi-total">约 ' + esc(fmtTime(it.total)) + '</span>' : '') + '</div>'
+        + '<div class="rhi-actions"><button class="rhi-btn primary" type="button" data-history-act="load" data-hid="' + esc(it.id) + '">载入并重算</button>'
+        + '<button class="rhi-btn danger" type="button" data-history-act="del" data-hid="' + esc(it.id) + '">删除</button></div></div>';
+    });
+    list.innerHTML = h;
+  }
+  function deleteRouteHistory(id) {
+    routeHistory = routeHistory.filter(function (it) { return it.id !== id; });
+    persistRouteHistory(); renderRouteHistory();
+  }
+  function clearRouteHistory() {
+    routeHistory = []; persistRouteHistory(); historyClearArmed = false;
+    var b = document.getElementById('route-history-clear'); if (b) b.textContent = '清空记录';
+    renderRouteHistory(); setRouteMsg('已清空历史规划记录。');
+  }
+  function loadHistoryEntry(id) {
+    var it = null; routeHistory.forEach(function (x) { if (x.id === id) it = x; });
+    if (!it) return;
+    route.ids = it.placeIds.slice();
+    var oi = document.getElementById('route-origin'); if (oi) oi.value = it.origin || '';
+    route.lastOrder = null; route.lastPlan = null; route.historySuppress = true;
+    route.layer.clearLayers(); var box = document.getElementById('route-result'); if (box) box.innerHTML = '';
+    openRouteDrawer(); setRouteMode(false); setRouteMsg('已载入历史记录，正在重新计算最优路线…');
+    setTimeout(function () { planRoute(); }, 40);
+  }
+
   function toggleRoutePlace(id) {
     var i = route.ids.indexOf(id);
     if (i >= 0) route.ids.splice(i, 1);
     else route.ids.push(id);
-    document.getElementById('route-count').textContent = '已选 ' + route.ids.length + ' 个地点';
+    route.lastOrder = null; route.lastPlan = null;
+    if (route.layer) route.layer.clearLayers();
+    var result = document.getElementById('route-result'); if (result) result.innerHTML = '';
+    setRouteMsg(route.ids.length ? '选择已更新，请重新规划最优路线。' : '');
     render();
   }
 
@@ -439,28 +508,82 @@
     if (el) el.innerHTML = msg;
   }
 
-  function initRoute() {
+  function selectedPlaces() { return route.ids.map(function (id) { return findPlace(id); }).filter(Boolean); }
+
+  function syncRouteSelectionUI() {
+    var countEl = document.getElementById('route-count');
+    var n = route.ids.length;
+    if (countEl) countEl.textContent = '已选 ' + n + ' 个地点';
     var toggle = document.getElementById('route-toggle');
-    var panel = document.getElementById('route-panel');
-    toggle.addEventListener('click', function () {
-      route.mode = !route.mode;
-      toggle.classList.toggle('on', route.mode);
-      panel.classList.toggle('open', route.mode);
-      document.getElementById('app').classList.toggle('route-on', route.mode);
-      if (!route.mode) route.layer.clearLayers();
-      render();
-    });
-    document.getElementById('route-plan').addEventListener('click', planRoute);
-    document.getElementById('route-clear').addEventListener('click', clearRoute);
+    if (toggle) { toggle.classList.toggle('on', route.mode); toggle.textContent = route.mode ? '⏹ 结束地图选点' : '📍 开始地图选点'; }
+    var appEl = document.getElementById('app'); if (appEl) appEl.classList.toggle('route-on', route.mode);
+    var routeOpen = document.getElementById('route-open'); if (routeOpen) routeOpen.classList.toggle('on', route.mode);
+    var banner = document.getElementById('route-select-banner'); if (banner) banner.hidden = !route.mode;
+    var title = document.getElementById('route-select-title');
+    if (title) title.textContent = route.targetFolder ? '正在为「' + route.targetFolder.name + '」选择地点' : '正在选择路线地点';
+    var bc = document.getElementById('route-select-count'); if (bc) bc.textContent = '已选 ' + n + ' 个地点';
+    var list = document.getElementById('route-selected-list');
+    if (list) {
+      var h = '';
+      selectedPlaces().forEach(function (p) { h += '<span class="rd-selected-chip"><span>' + esc(p.name) + '</span><button type="button" data-remove-route-id="' + esc(p.id) + '" title="移除">✕</button></span>'; });
+      list.innerHTML = h;
+      var ctx = document.getElementById('route-context-card'); if (ctx) { if (route.targetFolder) { ctx.hidden = false; ctx.innerHTML = '📁 当前正在为路线集 <b>' + esc(route.targetFolder.name) + '</b> 选择地点。规划完成后可直接保存到该路线集。'; } else { ctx.hidden = true; ctx.innerHTML = ''; } }
+    }
+    var rp = document.getElementById('route-panel'); if (rp) rp.classList.add('open');
   }
 
+  function openRouteDrawer() {
+    var drawer = document.getElementById('route-drawer'), scrim = document.getElementById('route-scrim');
+    if (drawer) { drawer.classList.add('open'); drawer.setAttribute('aria-hidden', 'false'); }
+    if (scrim) scrim.hidden = false;
+    document.body.classList.add('route-drawer-open');
+    renderRouteHistory(); refreshRouteSaveBox();
+  }
+  function closeRouteDrawer() {
+    var drawer = document.getElementById('route-drawer'), scrim = document.getElementById('route-scrim');
+    if (drawer) { drawer.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); }
+    if (scrim) scrim.hidden = true;
+    document.body.classList.remove('route-drawer-open');
+  }
+  function setRouteMode(on) { route.mode = !!on; syncRouteSelectionUI(); if (route.mode) closeRouteDrawer(); render(); }
+  function beginRouteSetSelection(target) {
+    route.targetFolder = target && target.id ? { id:String(target.id), name:String(target.name || '路线集') } : null;
+    route.ids = []; route.lastOrder = null; route.lastPlan = null;
+    var oi = document.getElementById('route-origin'); if (oi) oi.value = '';
+    if (route.layer) route.layer.clearLayers();
+    var result = document.getElementById('route-result'); if (result) result.innerHTML = '';
+    var auto = document.getElementById('route-auto-plan'); if (auto && target && target.autoPlan != null) auto.checked = !!target.autoPlan;
+    openRouteDrawer(); setRouteMode(true);
+    setRouteMsg('已进入地图选点模式。点击地图标记，再点详情中的「加入当前路线」；也可以直接点地点卡片旁的勾选按钮。');
+  }
+  function finishRouteSelection() {
+    if (route.ids.length < 2) { setRouteMsg('⚠️ 至少选择 2 个地点后才能规划路线。'); return; }
+    var auto = document.getElementById('route-auto-plan'); setRouteMode(false); openRouteDrawer();
+    if (auto && auto.checked) planRoute(); else setRouteMsg('✅ 已选 ' + route.ids.length + ' 个地点，点击“规划最优路线”生成路线。');
+  }
+  function initRoute() {
+    var ro = document.getElementById('route-open'); if (ro) ro.addEventListener('click', function () { route.targetFolder = null; syncRouteSelectionUI(); openRouteDrawer(); });
+    var rc = document.getElementById('route-close'); if (rc) rc.addEventListener('click', closeRouteDrawer);
+    var rs = document.getElementById('route-scrim'); if (rs) rs.addEventListener('click', closeRouteDrawer);
+    var toggle = document.getElementById('route-toggle'); if (toggle) toggle.addEventListener('click', function () { setRouteMode(!route.mode); });
+    var done = document.getElementById('route-select-done'); if (done) done.addEventListener('click', finishRouteSelection);
+    var planB = document.getElementById('route-plan'); if (planB) planB.addEventListener('click', planRoute);
+    var clearB = document.getElementById('route-clear'); if (clearB) clearB.addEventListener('click', clearRoute);
+    var sl = document.getElementById('route-selected-list');
+    if (sl) sl.addEventListener('click', function (e) { var b = e.target.closest ? e.target.closest('[data-remove-route-id]') : null; if (b) toggleRoutePlace(b.getAttribute('data-remove-route-id')); });
+    var hc = document.getElementById('route-history-clear');
+    if (hc) hc.addEventListener('click', function () { if (!routeHistory.length) return; clearRouteHistory(); });
+    var hl = document.getElementById('route-history-list');
+    if (hl) hl.addEventListener('click', function (e) { var b = e.target.closest ? e.target.closest('[data-history-act]') : null; if (!b) return; var id = b.getAttribute('data-hid'); if (b.getAttribute('data-history-act') === 'del') deleteRouteHistory(id); else loadHistoryEntry(id); });
+    var rr = document.getElementById('route-result');
+    if (rr) rr.addEventListener('click', function (e) { var b = e.target.closest ? e.target.closest('[data-route-save]') : null; if (b) savePlannedRouteToFolder(); });
+    renderRouteHistory(); syncRouteSelectionUI();
+  }
   function clearRoute() {
-    route.ids = [];
-    route.layer.clearLayers();
-    document.getElementById('route-count').textContent = '已选 0 个地点';
-    document.getElementById('route-result').innerHTML = '';
-    setRouteMsg('');
-    render();
+    route.ids = []; route.lastOrder = null; route.lastPlan = null;
+    if (route.layer) route.layer.clearLayers();
+    var result = document.getElementById('route-result'); if (result) result.innerHTML = '';
+    setRouteMsg('已清空当前地点选择。'); syncRouteSelectionUI(); render();
   }
 
   function findPlace(id) {
@@ -604,13 +727,18 @@
         }
       }
       var order = tspOrder(dur, n);
+      route.lastOrder = order.map(function (i) { return nodes[i].id; });
       var total = 0, legs = [];
       for (var i2 = 0; i2 < order.length - 1; i2++) {
         var d = dur[order[i2]][order[i2 + 1]];
         legs.push(d); total += d;
       }
+      var orderedPlaceIds = order.map(function (i) { return nodes[i].id; }).filter(function (id) { return id !== '__origin__'; });
+      route.lastPlan = { origin:originText || '', placeIds:orderedPlaceIds, orderedIds:route.lastOrder.slice(), total:total, hasOrigin:!!originPlace };
       drawRoute(nodes, order, null, !!originPlace);
       renderRouteResult(nodes, order, legs, total, legInfo, !!originPlace);
+      if (!route.historySuppress) addRouteHistory({ origin:originText || '', placeIds:orderedPlaceIds, total:total, hasOrigin:!!originPlace });
+      route.historySuppress = false;
       setRouteMsg('');
     }
 
@@ -749,7 +877,56 @@
     h.push('</ol>');
     h.push('<div class="route-total">预计总公共交通时间：<b>' + fmtTime(total) + '</b>（含步行与换乘，估算值）</div>');
     h.push('<div class="route-note">🚌 <b>气候卡（기후동행카드）</b>＝首尔市公共交通月票：市界内 1~9 号线、支线、盆唐/京义中央/机场铁路（一般）及市内公交可用；<b>超出首尔市界</b>（富川、河南渼沙、龙仁等）、机场快线直达、KTX、高速巴士<b>不可用</b>。Naver Map 公交路线中带 🌱 图标的路段即为气候卡可用路段。以上时间为估算，请以 Naver Map 实时公交为准。</div>');
+    h.push('<div class="route-save-box"><h4>📁 保存到路线集（可选）</h4><p>保存后可在“我的路线集”里继续修改、共享或载入。</p><div class="route-save-grid"><select id="route-save-folder"><option value="">正在读取路线集…</option></select><input id="route-save-name" placeholder="路线名称"><button class="btn-primary" type="button" data-route-save="1">保存这条最优路线</button></div><div id="route-save-msg" class="route-save-msg"></div></div>');
     box.innerHTML = h.join('');
+    refreshRouteSaveBox();
+  }
+
+  function setRouteSaveMsg(msg, ok) {
+    var el = document.getElementById('route-save-msg'); if (!el) return;
+    el.className = 'route-save-msg' + (ok === true ? ' ok' : (ok === false ? ' err' : ''));
+    el.textContent = msg || '';
+  }
+  function syncRouteSaveName(folderId) {
+    var nameEl = document.getElementById('route-save-name'); if (!nameEl) return;
+    if (!window.NCTAccount || !window.NCTAccount.suggestCustomRouteName) return;
+    window.NCTAccount.suggestCustomRouteName(folderId).then(function (nm) { if (nameEl && !nameEl.value.trim()) nameEl.value = nm || '自定义路线1'; }).catch(function () {});
+  }
+  function refreshRouteSaveBox() {
+    var sel = document.getElementById('route-save-folder'); if (!sel) return;
+    var acct = window.NCTAccount;
+    if (!acct || !acct.getUser || !acct.getUser()) { sel.innerHTML = '<option value="">登录后可保存到路线集</option>'; setRouteSaveMsg('可先登录，再把这条路线保存到自己的路线集。'); return; }
+    if (route.targetFolder) sel.innerHTML = '<option value="' + esc(route.targetFolder.id) + '">' + esc(route.targetFolder.name) + '</option>';
+    else sel.innerHTML = '<option value="">正在读取路线集…</option>';
+    acct.getMyFolders().then(function (folders) {
+      if (!folders || !folders.length) { sel.innerHTML = '<option value="">暂无路线集，请先去账号中新建</option>'; setRouteSaveMsg('请先在账号 → 我的路线集中创建一个路线集。'); return; }
+      var h = '';
+      folders.forEach(function (f) { if (f.canEdit === false) return; h += '<option value="' + f.id + '">' + esc(f.name) + (f.owner && f.owner !== (acct.getUser() || {}).username ? '（' + esc(f.owner) + '共享）' : '') + '</option>'; });
+      if (!h) { sel.innerHTML = '<option value="">没有可编辑的路线集</option>'; setRouteSaveMsg('只有自己的路线集或被共享且可编辑的路线集可保存。'); return; }
+      sel.innerHTML = h;
+      if (route.targetFolder) sel.value = String(route.targetFolder.id);
+      sel.onchange = function () { syncRouteSaveName(sel.value); };
+      syncRouteSaveName(sel.value);
+      setRouteSaveMsg('');
+    }).catch(function (e) { sel.innerHTML = '<option value="">无法读取路线集</option>'; setRouteSaveMsg(e.message || '无法读取路线集', false); });
+  }
+  function savePlannedRouteToFolder() {
+    var plan = route.lastPlan;
+    if (!plan || !plan.placeIds || plan.placeIds.length < 2) { setRouteSaveMsg('请先完成一次最优路线规划。', false); return; }
+    var acct = window.NCTAccount;
+    if (!acct || !acct.getUser || !acct.getUser()) { setRouteSaveMsg(document.body.classList.contains('guest-mode') ? '游客模式不能保存路线，请登录后再试。' : '请先登录账号，再保存路线。', false); if (acct && acct.open) acct.open('account'); return; }
+    var sel = document.getElementById('route-save-folder');
+    var nameEl = document.getElementById('route-save-name');
+    var folderId = sel ? Number(sel.value) : 0;
+    var name = nameEl ? nameEl.value.trim() : '';
+    if (!folderId) { setRouteSaveMsg('请选择一个路线集。', false); return; }
+    if (!name) { setRouteSaveMsg('请给这条路线命名。', false); return; }
+    var btn = document.querySelector('[data-route-save]'); if (btn) btn.disabled = true;
+    setRouteSaveMsg('正在保存…');
+    acct.saveRoute(folderId, { name:name, origin:plan.origin || '', stops:plan.placeIds }).then(function () {
+      setRouteSaveMsg('✅ 已保存到路线集「' + (sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '') + '」。', true);
+      toast('已保存路线到路线集');
+    }).catch(function (e) { setRouteSaveMsg(e.message || '保存失败', false); }).then(function () { if (btn) btn.disabled = false; });
   }
 
   /* ================= 用户添加地点 ================= */
@@ -1011,6 +1188,8 @@
     h.push('<span class="badge badge-type">' + esc(p.type) + '</span>');
     if (p.custom) h.push('<span class="badge badge-type badge-custom">自定义</span>');
     h.push('</div>');
+    var isInRoute = route.ids.indexOf(p.id) >= 0;
+    h.push('<button type="button" id="dp-route-pick" class="dp-route-pick' + (isInRoute ? ' on' : '') + '">' + (isInRoute ? '✓ 已加入当前路线' : '＋ 加入当前路线') + '<small>' + (route.targetFolder ? '目标路线集：' + esc(route.targetFolder.name) : '点击后进入地图选点模式') + '</small></button>');
     if (p.desc) h.push('<p class="dp-desc">' + esc(p.desc) + '</p>');
     if (p.members && p.members.length) {
       h.push('<div class="dp-section">👥 谁去过</div>');
@@ -1139,14 +1318,11 @@
   }
 
   function usePreset(rr) {
-    route.mode = true;
+    route.mode = false;
+    route.targetFolder = null;
     route.ids = rr.ids.slice();
-    var toggle = document.getElementById('route-toggle');
-    var panel = document.getElementById('route-panel');
-    if (toggle) toggle.classList.add('on');
-    if (panel) panel.classList.add('open');
-    var ap = document.getElementById('app'); if (ap) ap.classList.add('route-on');
-    var rc = document.getElementById('route-count'); if (rc) rc.textContent = '已选 ' + route.ids.length + ' 个地点';
+    openRouteDrawer();
+    syncRouteSelectionUI();
     setRouteMsg('🎫 已载入预设路线「' + rr.name + '」，正在规划…');
     render();
     setTimeout(planRoute, 250);
@@ -1176,6 +1352,13 @@
 
   function initNeo() {
     var byId = function (id) { return document.getElementById(id); };
+    var dpBody = byId('dp-body');
+    if (dpBody) dpBody.addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('#dp-route-pick') : null; if (!b || !curSpot) return;
+      if (!route.mode) setRouteMode(true);
+      toggleRoutePlace(curSpot.id);
+      fillDetail(curSpot);
+    });
     var scrim = byId('dp-scrim'); if (scrim) scrim.addEventListener('click', closePanel);
     var dclose = byId('dp-close'); if (dclose) dclose.addEventListener('click', closePanel);
     var copyB = byId('dp-copy'); if (copyB) copyB.addEventListener('click', copyAddress);
@@ -1197,6 +1380,33 @@
     renderBucketCount();
     buildPresets();
   }
+
+  /* ===== 供账号/路线集模块调用的接口（NCTMap API） ===== */
+  route.lastOrder = null;
+  window.NCTMap = {
+    getRouteIds: function () { return route.ids.slice(); },
+    setRouteIds: function (ids) {
+      route.ids = (Array.isArray(ids) ? ids : []).map(String);
+      route.lastOrder = null; route.lastPlan = null;
+      syncRouteSelectionUI();
+      render();
+    },
+    getOrigin: function () { var el = document.getElementById('route-origin'); return el ? el.value : ''; },
+    setOrigin: function (v) { var el = document.getElementById('route-origin'); if (el) el.value = v || ''; },
+    setRouteMode: function (on) { setRouteMode(on); },
+    openRoutePlanner: function () { openRouteDrawer(); },
+    beginRouteSetSelection: function (target) { beginRouteSetSelection(target || null); },
+    setTargetFolder: function (target) {
+      route.targetFolder = target && target.id ? { id:String(target.id), name:String(target.name || '路线集') } : null;
+      var ctx = document.getElementById('route-context-card');
+      if (ctx) ctx.hidden = !route.targetFolder;
+      syncRouteSelectionUI();
+    },
+    plan: function () { planRoute(); },
+    getLastOrder: function () { return route.lastOrder ? route.lastOrder.slice() : null; },
+    findPlace: function (id) { var p = findPlace(id); return p ? { id: p.id, name: p.name } : null; },
+    getHistoryCount: function () { return routeHistory.length; }
+  };
 
   document.addEventListener('DOMContentLoaded', function () {
 
@@ -1226,3 +1436,6 @@
     }
   });
 })();
+
+
+
