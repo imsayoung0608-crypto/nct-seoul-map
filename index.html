@@ -15,8 +15,56 @@
   <link rel="stylesheet" href="css/neo.css">
   <!-- Mobile-first App shell（在 style/neo 之后加载以覆盖布局） -->
   <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/account.css">
+  <link rel="stylesheet" href="css/route.css">
+  <link rel="stylesheet" href="css/entry.css">
 </head>
 <body>
+  <!-- ===== NEO 启动页 ===== -->
+  <div id="neo-splash" class="neo-splash" role="button" tabindex="0" aria-label="点击进入 NCT Seoul Map">
+    <div class="neo-splash-orb orb-a"></div><div class="neo-splash-orb orb-b"></div><div class="neo-splash-grid"></div>
+    <div class="neo-splash-content">
+      <div class="neo-splash-kicker">NCT · SEOUL · NEO CYBER</div>
+      <h1 class="neo-splash-word">NEO GOT MY BACK</h1>
+      <div class="neo-splash-sub">NCT SEOUL MAP</div>
+      <button id="neo-splash-tap" type="button">TAP TO ENTER</button>
+    </div>
+  </div>
+
+  <!-- ===== 登录 / 注册 / 游客入口 ===== -->
+  <div id="neo-auth-gate" class="neo-auth-gate" hidden>
+    <div class="neo-auth-backdrop"></div>
+    <div class="neo-auth-shell">
+      <section class="neo-auth-brand">
+        <div class="neo-brand-kicker">NCT SEOUL MAP</div>
+        <h2>NEO<br>GOT MY<br>BACK</h2>
+        <p>找到同款，规划路线，去首尔见他们。</p>
+      </section>
+      <section class="neo-auth-card">
+        <div class="neo-auth-tabs"><button id="neo-tab-login" class="on" type="button">登录</button><button id="neo-tab-register" type="button">注册</button></div>
+        <form id="neo-login-form" class="neo-auth-form" autocomplete="on">
+          <label>用户名<input id="neo-login-user" autocomplete="username" placeholder="输入用户名"></label>
+          <label>密码<input id="neo-login-pass" type="password" autocomplete="current-password" placeholder="输入密码"></label>
+          <div id="neo-login-msg" class="neo-auth-msg"></div>
+          <button class="neo-auth-main" type="submit">进入 NEO MAP</button>
+        </form>
+        <form id="neo-register-form" class="neo-auth-form" autocomplete="on" hidden>
+          <label>用户名<input id="neo-reg-user" autocomplete="username" placeholder="3–24 位字母/数字/_-. "></label>
+          <div id="neo-reg-user-hint" class="neo-auth-hint"></div>
+          <label>密码<input id="neo-reg-pass" type="password" autocomplete="new-password" placeholder="至少 8 位，不能与用户名相同"></label>
+          <div id="neo-reg-pass-hint" class="neo-auth-hint"></div>
+          <label>确认密码<input id="neo-reg-pass2" type="password" autocomplete="new-password" placeholder="再次输入密码"></label>
+          <div id="neo-reg-pass2-hint" class="neo-auth-hint"></div>
+          <label>找回问题<input id="neo-reg-q" placeholder="如：我的第一张专辑是？"></label>
+          <label>找回答案<input id="neo-reg-a" placeholder="账号找回答案"></label>
+          <div id="neo-reg-msg" class="neo-auth-msg"></div>
+          <button class="neo-auth-main" type="submit">创建账号并进入</button>
+        </form>
+        <button id="neo-guest" class="neo-auth-guest" type="button">游客身份进入 <span>只浏览 · 不保存路线</span></button>
+        <div class="neo-auth-foot">游客可查看地图、筛选、搜索和规划路线；保存路线需要登录。</div>
+      </section>
+    </div>
+  </div>
   <div id="app">
 
     <!-- ===== 全屏地图层（最底层） ===== -->
@@ -36,10 +84,17 @@
         <button id="search-clear" class="search-clear" title="清空搜索" aria-label="清空搜索">✕</button>
       </div>
       <div class="tb-actions">
-        <button id="hdr-roulette" class="hbtn" title="今天不知道去哪？让 NCT 帮你决定" aria-label="随机抽一个打卡点">🎰</button>
-        <button id="filter-toggle" class="hbtn hbtn-filter" aria-label="筛选" title="打开筛选面板">☰ 筛选</button>
+        <button id="route-open" class="hbtn hbtn-route" title="打开最优路线规划" aria-label="打开最优路线规划">🧭 <span class="hbtn-label">最优路线</span></button>
+        <button id="filter-toggle" class="hbtn hbtn-filter" aria-label="筛选" title="打开筛选面板">☰ <span class="hbtn-label">筛选</span></button>
       </div>
     </header>
+
+    <!-- ===== 地图选点提示条：进入最优路线规划后显示 ===== -->
+    <div id="route-select-banner" class="route-select-banner glass" hidden>
+      <span class="rsb-check">✓</span>
+      <div class="rsb-copy"><b id="route-select-title">正在选择路线地点</b><span id="route-select-count">已选 0 个地点</span></div>
+      <button id="route-select-done" type="button">完成选点</button>
+    </div>
 
     <!-- ===== 筛选面板遮罩（移动端抽屉用） ===== -->
     <div id="sidebar-scrim" class="sidebar-scrim" hidden></div>
@@ -74,24 +129,6 @@
       <div class="panel">
         <h2>🎫 预设打卡路线 · TOUR</h2>
         <div id="preset-routes" class="preset-routes"></div>
-      </div>
-
-      <div class="panel">
-        <h2>🚇 路线规划 · PUBLIC TRANSIT</h2>
-        <button id="route-toggle" class="route-toggle">开始选点（勾选地点规划最优路线）</button>
-        <div id="route-panel" class="route-panel">
-          <p class="route-hint">可先填写<b>出发地址/附近地铁站</b>（留空则从第一站出发），再勾选 <b>2 个以上</b> 地点；系统按<b>地铁/公交</b>估算最优顺序，并逐段标注<b>气候卡（기후동행카드）</b>可用性。</p>
-          <label class="route-origin-label">🏠 出发地址（地铁站名或地址均可）
-            <input id="route-origin" type="text" placeholder="如：홍대입구역 / 弘大入口 / 首尔麻浦区…">
-          </label>
-          <div class="route-count" id="route-count">已选 0 个地点</div>
-          <div class="route-btns">
-            <button id="route-plan" class="btn-primary">🚇 规划最优路线</button>
-            <button id="route-clear" class="btn-plain">清空选择</button>
-          </div>
-          <div id="route-msg" class="route-msg"></div>
-          <div id="route-result"></div>
-        </div>
       </div>
 
       <div class="panel">
@@ -146,6 +183,25 @@
       <button class="fab" id="fab-bucket-float" title="我的打卡清单" aria-label="我的打卡清单">❤️</button>
     </div>
   </div>
+
+  <!-- ===== 独立最优路线规划面板：桌面右侧 / 手机底部 ===== -->
+  <div id="route-scrim" class="route-scrim" hidden></div>
+  <aside id="route-drawer" class="route-drawer glass" aria-hidden="true" aria-label="最优路线规划">
+    <div class="route-drawer-head">
+      <div><span class="rd-eyebrow">PUBLIC TRANSIT · SEOUL</span><h2>🧭 最优路线规划</h2></div>
+      <button id="route-close" class="icon-btn" type="button" aria-label="关闭路线规划">✕</button>
+    </div>
+    <div class="route-drawer-body">
+      <div id="route-context-card" class="rd-context" hidden></div>
+      <div id="route-panel" class="route-panel open">
+        <section class="rd-card"><div class="rd-step-head"><span class="rd-step-no">1</span><div><h3>填写出发地</h3><p>地铁站名或地址均可；留空则从第一站出发。</p></div></div><label class="route-origin-label">🏠 出发地址<input id="route-origin" type="text" placeholder="如：홍대입구역 / 弘大入口 / 首尔麻浦区…"></label></section>
+        <section class="rd-card"><div class="rd-step-head"><span class="rd-step-no">2</span><div><h3>选择地点</h3><p>进入选点模式后，地图标记和地点详情都会显示明确的勾选按钮。</p></div></div><div class="rd-select-summary"><b id="route-count">已选 0 个地点</b><span>至少选择 2 个地点</span></div><div id="route-selected-list" class="rd-selected-list"></div><div class="route-btns"><button id="route-toggle" class="route-toggle" type="button">📍 开始地图选点</button><button id="route-clear" class="btn-plain" type="button">清空选择</button></div><label class="rd-auto"><input id="route-auto-plan" type="checkbox" checked> 完成选点后自动规划最优路线</label></section>
+        <section class="rd-card rd-plan-actions"><div class="rd-step-head"><span class="rd-step-no">3</span><div><h3>生成路线</h3><p>按公共交通时间估算顺序，并逐段标注气候卡可用性。</p></div></div><button id="route-plan" class="btn-primary" type="button">🚇 规划最优路线</button><div id="route-msg" class="route-msg"></div></section>
+        <div id="route-result"></div>
+      </div>
+      <section class="rd-card route-history-card"><div class="rd-history-head"><div><h3>🕘 历史规划记录</h3><p>记录保存在本浏览器，可单独删除或一键清空。</p></div><button id="route-history-clear" class="btn-plain" type="button">清空记录</button></div><div id="route-history-list" class="route-history-list"></div></section>
+    </div>
+  </aside>
 
   <!-- ===== 详情面板：移动端底部弹层 / 桌面端右侧卡片 ===== -->
   <div id="dp-scrim" class="dp-scrim" hidden></div>
@@ -225,5 +281,8 @@
   <script src="js/transit.js"></script>
   <script src="js/app.js"></script>
   <script src="js/shell.js"></script>
+  <script src="js/account.js"></script>
+  <script src="js/entry-gate.js"></script>
 </body>
 </html>
+
