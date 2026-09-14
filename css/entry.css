@@ -1,0 +1,72 @@
+/* =====================================================================
+   NCT Seoul Map · NEO 启动页 / 登录注册入口
+   珍珠香槟绿 · Dark Neo App
+   ===================================================================== */
+:root {
+  --pearl-green:#b8f500;
+  --pearl-green-2:#c2f82c;
+  --pearl-green-3:#e2ff66;
+  --champagne:#e7d8ae;
+  --pearl-white:#f6f8ef;
+  --entry-dark:#080b09;
+}
+#neo-splash,#neo-auth-gate { font-family:Inter,'Space Grotesk',-apple-system,'PingFang SC','Microsoft YaHei',sans-serif; }
+#neo-splash { position:fixed; z-index:4000; inset:0; overflow:hidden; background:radial-gradient(circle at 70% 24%,rgba(194,248,44,.2),transparent 28%),radial-gradient(circle at 20% 80%,rgba(231,216,174,.15),transparent 34%),linear-gradient(145deg,#050706,#0c100d 48%,#050707); cursor:pointer; transition:opacity .65s ease,visibility .65s ease; }
+#neo-splash.hide { opacity:0; visibility:hidden; pointer-events:none; }
+.neo-splash-grid { position:absolute; inset:0; opacity:.14; background-image:linear-gradient(rgba(194,248,44,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(194,248,44,.16) 1px,transparent 1px); background-size:46px 46px; mask-image:linear-gradient(to bottom,transparent,black 35%,black 75%,transparent); }
+.neo-splash-orb { position:absolute; border-radius:50%; filter:blur(14px); opacity:.6; }
+.orb-a { width:230px;height:230px;right:-70px;top:8%;background:radial-gradient(circle,rgba(226,255,102,.48),rgba(194,248,44,.08) 56%,transparent 70%); animation:entryFloat 6s ease-in-out infinite; }
+.orb-b { width:180px;height:180px;left:-60px;bottom:7%;background:radial-gradient(circle,rgba(231,216,174,.35),rgba(231,216,174,.04) 58%,transparent 72%); animation:entryFloat 7.5s ease-in-out infinite reverse; }
+.neo-splash-content { position:relative; z-index:2; min-height:100dvh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:max(24px,env(safe-area-inset-top)) 22px max(28px,env(safe-area-inset-bottom)); }
+.neo-splash-kicker { font-size:10px; letter-spacing:4px; color:var(--champagne); margin-bottom:18px; }
+.neo-splash-word { margin:0; max-width:980px; font-family:'Space Grotesk',Inter,sans-serif; font-size:clamp(42px,11vw,116px); line-height:.9; letter-spacing:-2px; font-weight:800; background:linear-gradient(105deg,#f8fbf2 5%,var(--pearl-green-3) 32%,var(--champagne) 60%,var(--pearl-green-2) 88%); -webkit-background-clip:text; background-clip:text; color:transparent; background-size:220% auto; animation:entryShimmer 3.4s linear infinite; filter:drop-shadow(0 0 22px rgba(194,248,44,.18)); }
+.neo-splash-sub { margin-top:18px; font-family:'Space Grotesk',sans-serif; font-size:12px; letter-spacing:6px; color:rgba(246,248,239,.76); }
+#neo-splash-tap { margin-top:38px; border:1px solid rgba(194,248,44,.48); background:rgba(194,248,44,.08); color:var(--pearl-green-3); border-radius:999px; padding:11px 20px; font-size:11px; letter-spacing:2px; font-weight:700; cursor:pointer; box-shadow:0 0 22px rgba(194,248,44,.12); }
+#neo-splash-tap:hover { background:rgba(194,248,44,.16); box-shadow:0 0 30px rgba(194,248,44,.25); }
+@keyframes entryFloat { 0%,100%{transform:translate3d(0,0,0) scale(1)} 50%{transform:translate3d(-10px,14px,0) scale(1.06)} }
+@keyframes entryShimmer { to{background-position:220% center} }
+
+#neo-auth-gate { position:fixed; z-index:3990; inset:0; display:grid; place-items:center; padding:18px; transition:opacity .35s ease,visibility .35s ease; }
+#neo-auth-gate[hidden] { display:none; }
+#neo-auth-gate.hide { opacity:0; visibility:hidden; pointer-events:none; }
+.neo-auth-backdrop { position:absolute; inset:0; background:radial-gradient(circle at 76% 17%,rgba(194,248,44,.16),transparent 32%),radial-gradient(circle at 18% 86%,rgba(231,216,174,.12),transparent 32%),rgba(5,7,6,.94); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); }
+.neo-auth-shell { position:relative; z-index:1; width:min(980px,96vw); min-height:min(660px,88dvh); display:grid; grid-template-columns:1.12fr .88fr; overflow:hidden; border:1px solid rgba(231,216,174,.2); border-radius:28px; background:linear-gradient(145deg,rgba(15,18,15,.96),rgba(8,10,9,.98)); box-shadow:0 28px 100px rgba(0,0,0,.72),0 0 50px rgba(194,248,44,.08); }
+.neo-auth-brand { position:relative; display:flex; flex-direction:column; justify-content:flex-end; padding:clamp(28px,5vw,62px); background:radial-gradient(circle at 30% 20%,rgba(194,248,44,.16),transparent 34%),linear-gradient(150deg,#151c14,#0b100c 70%); overflow:hidden; }
+.neo-auth-brand::after { content:''; position:absolute; width:300px;height:300px;border-radius:50%;right:-110px;top:-90px;background:radial-gradient(circle,rgba(226,255,102,.22),transparent 65%); }
+.neo-brand-kicker { font-size:10px; letter-spacing:4px; color:var(--champagne); margin-bottom:14px; }
+.neo-auth-brand h2 { margin:0; font-family:'Space Grotesk',sans-serif; font-size:clamp(48px,7vw,82px); line-height:.82; letter-spacing:-4px; background:linear-gradient(110deg,var(--pearl-white),var(--pearl-green-3) 45%,var(--champagne)); -webkit-background-clip:text;background-clip:text;color:transparent; }
+.neo-auth-brand p { max-width:320px; margin:22px 0 0; color:#aab5aa; font-size:13px; line-height:1.8; }
+.neo-auth-card { min-height:0; overflow-y:auto; padding:clamp(22px,4vw,42px); display:flex; flex-direction:column; justify-content:center; background:rgba(10,12,10,.78); -webkit-overflow-scrolling:touch; }
+.neo-auth-tabs { display:flex; gap:6px; padding:5px; border:1px solid rgba(255,255,255,.08); border-radius:999px; background:rgba(255,255,255,.035); margin-bottom:18px; }
+.neo-auth-tabs button { flex:1; border:0; border-radius:999px; background:transparent; color:#909b91; padding:9px 12px; font-size:13px; cursor:pointer; }
+.neo-auth-tabs button.on { background:linear-gradient(120deg,var(--pearl-green-2),var(--pearl-green-3)); color:#081208; font-weight:800; box-shadow:0 0 18px rgba(194,248,44,.25); }
+.neo-auth-form { display:flex; flex-direction:column; gap:8px; }
+.neo-auth-form[hidden] { display:none; }
+.neo-auth-form label { display:flex; flex-direction:column; gap:5px; color:#aeb8af; font-size:11px; }
+.neo-auth-form input { width:100%; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.055); color:#f6f8ef; border-radius:12px; padding:11px 12px; font-size:13px; outline:none; transition:.18s ease; }
+.neo-auth-form input:focus { border-color:var(--pearl-green-2); box-shadow:0 0 0 3px rgba(194,248,44,.1); }
+.neo-auth-form input.invalid { border-color:#ff6b84; box-shadow:0 0 0 3px rgba(255,107,132,.1); }
+.neo-auth-form input.valid { border-color:var(--pearl-green-2); }
+.neo-auth-hint { min-height:13px; font-size:10px; color:#7f8b80; margin-top:-3px; }
+.neo-auth-hint.err { color:#ff8fa3; }.neo-auth-hint.ok { color:var(--pearl-green-3); }
+.neo-auth-msg { min-height:16px; color:#ff9eb0; font-size:11px; }
+.neo-auth-msg.ok { color:var(--pearl-green-3); }
+.neo-auth-main { margin-top:4px; border:0; border-radius:12px; padding:12px; background:linear-gradient(120deg,var(--pearl-green),var(--pearl-green-3)); color:#071107; font-weight:900; font-size:13px; cursor:pointer; box-shadow:0 8px 26px rgba(194,248,44,.18); }
+.neo-auth-main:disabled { opacity:.55; cursor:wait; }
+.neo-auth-guest { margin-top:14px; border:1px solid rgba(231,216,174,.3); background:rgba(231,216,174,.06); color:#efe6cd; border-radius:12px; padding:11px; cursor:pointer; font-size:12.5px; }
+.neo-auth-guest span { display:block; margin-top:2px; color:#8e9a8f; font-size:10px; }
+.neo-auth-foot { margin-top:12px; color:#7f8980; font-size:10.5px; line-height:1.55; text-align:center; }
+body.guest-mode #acct-btn { color:var(--champagne); border-color:rgba(231,216,174,.35); }
+body.guest-mode .route-save-box { opacity:.72; }
+body.guest-mode .route-save-box::before { content:'游客模式：登录后才能保存路线'; display:block; color:var(--champagne); font-size:10.5px; margin-bottom:6px; }
+@media (max-width: 760px) {
+  #neo-auth-gate { padding:0; align-items:end; }
+  .neo-auth-shell { width:100%; min-height:auto; max-height:92dvh; grid-template-columns:1fr; border-radius:26px 26px 0 0; }
+  .neo-auth-brand { min-height:180px; padding:28px 24px 20px; justify-content:center; }
+  .neo-auth-brand h2 { font-size:48px; }
+  .neo-auth-brand p { margin-top:12px; }
+  .neo-auth-card { padding:20px 18px calc(22px + env(safe-area-inset-bottom)); }
+  .neo-splash-word { font-size:clamp(38px,13vw,72px); }
+  .neo-splash-sub { letter-spacing:4px; }
+}
+@media (prefers-reduced-motion: reduce) { .neo-splash-orb,.neo-splash-word { animation:none !important; } }

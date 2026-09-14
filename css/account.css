@@ -1,0 +1,73 @@
+/* NCT Seoul Map · 账号 / 路线集 / 共享 UI（Neo Green 暗色） */
+#acct-btn { border:1px solid var(--glass-border,rgba(255,255,255,.1)); background:rgba(132,232,44,.12); color:#b6f36b;
+  border-radius:999px; height:34px; padding:0 12px; font-size:13px; cursor:pointer; white-space:nowrap; }
+#acct-btn:hover { border-color:#84e82c; box-shadow:0 0 14px rgba(132,232,44,.35); }
+#acct-modal { position:fixed; inset:0; z-index:1500; display:none; align-items:center; justify-content:center; padding:16px; }
+#acct-modal.open { display:flex; }
+.acct-backdrop { position:absolute; inset:0; background:rgba(5,6,8,.62); backdrop-filter:blur(2px); }
+.acct-panel { position:relative; width:min(980px,96vw); max-height:90dvh; display:flex; flex-direction:column;
+  background:rgba(12,12,16,.96); border:1px solid rgba(132,232,44,.28); border-radius:18px; color:#f0f4f8;
+  box-shadow:0 24px 80px rgba(0,0,0,.7); overflow:hidden; }
+.acct-head { display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,.08); }
+.acct-head h3 { margin:0; font-size:15px; color:#b6f36b; letter-spacing:1px; }
+.acct-head .acct-user { margin-left:auto; font-size:12px; color:#9aa4b2; }
+.acct-close { border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.06); color:#fff; width:30px; height:30px; border-radius:50%; cursor:pointer; }
+.acct-tabs { display:flex; gap:6px; padding:10px 14px 0; flex-wrap:wrap; }
+.acct-tab { border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.04); color:#dfe6ee; border-radius:999px;
+  padding:6px 12px; font-size:12.5px; cursor:pointer; }
+.acct-tab.on { background:#84e82c; color:#08130a; border-color:#84e82c; font-weight:700; }
+.acct-body { padding:12px 16px 18px; overflow:auto; }
+.acct-grid { display:grid; grid-template-columns: 300px 1fr; gap:14px; }
+@media (max-width:760px){ .acct-grid { grid-template-columns:1fr; } }
+.acct-card { border:1px solid rgba(255,255,255,.09); background:rgba(255,255,255,.035); border-radius:12px; padding:10px 12px; }
+.acct-card h4 { margin:2px 0 8px; font-size:12.5px; color:#9aa4b2; letter-spacing:.5px; }
+.acct-field { display:flex; flex-direction:column; gap:4px; margin-bottom:8px; font-size:12px; color:#9aa4b2; }
+.acct-field input, .acct-field select, .acct-field textarea { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14);
+  color:#fff; border-radius:8px; padding:8px 10px; font-size:13px; }
+.acct-btn { border:1px solid rgba(132,232,44,.5); background:rgba(132,232,44,.14); color:#c8f97a; border-radius:9px;
+  padding:8px 12px; font-size:12.5px; cursor:pointer; }
+.acct-btn:hover { background:rgba(132,232,44,.24); }
+.acct-btn.primary { background:#84e82c; color:#08130a; font-weight:700; border-color:#84e82c; }
+.acct-btn.plain { border-color:rgba(255,255,255,.16); background:rgba(255,255,255,.05); color:#dfe6ee; }
+.acct-btn.danger { border-color:rgba(255,84,112,.5); background:rgba(255,84,112,.12); color:#ff9db0; }
+.acct-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.acct-folder { padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.09); margin-bottom:6px; cursor:pointer; }
+.acct-folder.on { border-color:#84e82c; background:rgba(132,232,44,.08); }
+.acct-folder .name { font-size:13.5px; font-weight:600; }
+.acct-folder .meta { font-size:11px; color:#9aa4b2; margin-top:2px; }
+.acct-tag { font-size:10px; padding:1px 7px; border-radius:999px; margin-left:6px; }
+.acct-tag.private { background:#3a3f4a; color:#dfe6ee; }
+.acct-tag.public { background:#1f6f4a; color:#d7ffe9; }
+.acct-tag.shared { background:#1d5f8a; color:#d9f0ff; }
+.acct-route { border:1px solid rgba(255,255,255,.09); border-radius:10px; padding:8px 10px; margin-bottom:6px; }
+.acct-route .name { font-size:13px; font-weight:600; }
+.acct-route .meta { font-size:11px; color:#9aa4b2; margin:2px 0 6px; }
+.acct-log { font-size:12px; color:#c9d3de; border-bottom:1px dashed rgba(255,255,255,.08); padding:5px 0; }
+.acct-log .t { color:#9aa4b2; font-size:11px; }
+.acct-msg { font-size:12px; margin-top:8px; min-height:16px; }
+.acct-msg.err { color:#ff8fa3; } .acct-msg.ok { color:#b6f36b; }
+.acct-hint { font-size:11px; color:#8b95a3; line-height:1.6; }
+.acct-toast { position:fixed; left:50%; bottom:120px; transform:translateX(-50%); z-index:1600; background:rgba(12,12,16,.95);
+  border:1px solid rgba(132,232,44,.4); color:#e8ffe0; padding:9px 14px; border-radius:999px; font-size:13px; opacity:0; transition:.2s; pointer-events:none; }
+.acct-toast.show { opacity:1; }
+
+/* 注册实时校验提示 */
+.acct-field-hint { font-size: 11px; min-height: 14px; line-height: 1.4; margin-top: 2px; }
+.acct-field-hint.err { color: #ff8fa3; }
+.acct-field-hint.ok { color: #b6f36b; }
+.acct-field input.invalid { border-color: #ff5470 !important; box-shadow: 0 0 0 2px rgba(255,84,112,.16); }
+.acct-field input.valid { border-color: #84e82c !important; }
+
+/* 修复：顶栏搜索框与右侧操作区层叠，导致账号按钮点不到 */
+#topbar .tb-search { position: relative; z-index: 1; }
+#topbar .tb-actions { position: relative; z-index: 5; flex: 0 0 auto; }
+#acct-btn { position: relative; z-index: 6; }
+
+/* ===== 路线集 → 地图选点衔接 ===== */
+.acct-pick-map { display:flex; flex-direction:column; gap:8px; }
+.acct-pick-map > div > b { font-size:13px; color:#fff; }
+.acct-check { display:flex; align-items:flex-start; gap:7px; color:#dfe6ee; font-size:11.5px; line-height:1.45; cursor:pointer; }
+.acct-check input { accent-color:#84e82c; width:16px; height:16px; margin:0; flex:0 0 auto; }
+.acct-pick-map .acct-btn.primary { align-self:flex-start; }
+.acct-divider { display:flex; align-items:center; gap:8px; margin:10px 0 8px; color:#6f7884; font-size:10.5px; }
+.acct-divider::before,.acct-divider::after { content:''; flex:1 1 auto; height:1px; background:rgba(255,255,255,.09); }
