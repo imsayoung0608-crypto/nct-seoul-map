@@ -11,10 +11,10 @@
   function apiBase() { return (localStorage.getItem(API_KEY) || '').trim().replace(/\/$/, ''); }
   function api(path, opts) {
     var base = apiBase();
-    if (!base && /github\.io$/i.test(location.hostname)) return Promise.reject(new Error('当前是 GitHub Pages 静态站点：请在“账号”页填写后端服务器地址（如 http://你的IP:8092）'));
     opts = opts || {}; opts.headers = opts.headers || {}; opts.headers['Content-Type'] = 'application/json';
     if (state.token) opts.headers['Authorization'] = 'Bearer ' + state.token;
     if (opts.body && typeof opts.body !== 'string') opts.body = JSON.stringify(opts.body);
+    if (window.NCTLocalAccount && window.NCTLocalAccount.available()) return window.NCTLocalAccount.api(path, opts);
     return fetch(base + path, opts).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || ('请求失败 ' + r.status)); return j; });
     });
@@ -59,10 +59,7 @@
   function authHTML(mode) {
     if (state.user) {
       return '<div class="acct-card"><h4>当前账号</h4><div class="acct-row"><b>' + esc(state.user.username) + '</b>'
-        + '<button class="acct-btn plain" data-act="logout">退出登录</button></div></div>'
-        + '<div class="acct-card" style="margin-top:10px"><h4>后端服务器地址（在 GitHub Pages 上使用时填写）</h4>'
-        + '<div class="acct-field"><input id="acct-api-input" placeholder="如 http://192.168.1.10:8092" value="' + esc(apiBase()) + '"></div>'
-        + '<div class="acct-row"><button class="acct-btn" data-act="save-api">保存地址</button><span class="acct-hint">本机运行 server.js 时可留空（同源）。</span></div></div>';
+        + '<button class="acct-btn plain" data-act="logout">退出登录</button></div></div>';
     }
     var tabs = '<div class="acct-row" style="margin-bottom:10px">'
       + '<button class="acct-btn ' + (mode === 'login' ? 'primary' : 'plain') + '" data-act="mode-login">登录</button>'
@@ -89,10 +86,7 @@
     return tabs + '<div class="acct-card"><h4>登录</h4>'
       + '<div class="acct-field">用户名<input id="acct-u"></div>'
       + '<div class="acct-field">密码<input id="acct-p" type="password"></div>'
-      + '<div class="acct-row"><button class="acct-btn primary" data-act="login">登录</button></div></div>'
-      + '<div class="acct-card" style="margin-top:10px"><h4>后端服务器地址（在 GitHub Pages 上使用时填写）</h4>'
-      + '<div class="acct-field"><input id="acct-api-input" placeholder="如 http://192.168.1.10:8092" value="' + esc(apiBase()) + '"></div>'
-      + '<div class="acct-row"><button class="acct-btn plain" data-act="save-api">保存地址</button><span class="acct-hint">本机运行 server.js 时可留空（同源）。</span></div></div>';
+      + '<div class="acct-row"><button class="acct-btn primary" data-act="login">登录</button></div></div>';
   }
 
   function bindRegisterValidation() {
@@ -285,7 +279,6 @@
     if (name === 'mode-recover') { state.authMode = 'recover'; render(); return; }
     if (name === 'goto-login') { state.tab = 'account'; state.authMode = 'login'; render(); return; }
     if (name === 'logout') { api('/api/auth/logout', { method:'POST' }).catch(function(){}); state.token = ''; state.user = null; state.folders = []; state.folder = null; localStorage.removeItem(TOKEN_KEY); toast('已退出登录'); render(); return; }
-    if (name === 'save-api') { localStorage.setItem(API_KEY, val('acct-api-input').trim()); toast('已保存服务器地址'); return; }
     if (name === 'login') return api('/api/auth/login', { method:'POST', body:{ username:val('acct-u'), password:val('acct-p') } })
       .then(function (j) { state.token = j.token; localStorage.setItem(TOKEN_KEY, j.token); state.user = j.user; toast('登录成功'); return loadFolders(); }).then(render).catch(function (e) { toast(e.message); });
     if (name === 'register') {

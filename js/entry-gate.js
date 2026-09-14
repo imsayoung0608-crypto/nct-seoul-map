@@ -76,5 +76,6 @@
     });
   }
   var guest=$('neo-guest'); if(guest) guest.addEventListener('click',function(){ enterApp('guest'); });
+  if (window.NCTLocalAccount && window.NCTLocalAccount.available()) { var foot=document.querySelector('.neo-auth-foot'); if(foot) foot.textContent='公网静态版使用浏览器本地账号，数据仅保存在当前设备。'; }
   if (window.NCTAccount && window.NCTAccount.refreshUser) window.NCTAccount.refreshUser().catch(function(){});
 })();
