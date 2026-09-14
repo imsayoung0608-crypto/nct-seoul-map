@@ -246,3 +246,7 @@ const CATEGORIES = [
   { id: 'store', name: '同款店铺' },
   { id: 'spot',  name: '拍照打卡点' },
 ];
+
+
+
+
