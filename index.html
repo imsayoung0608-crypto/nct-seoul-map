@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0d0d0d">
+  <title>NCT 首尔同款地图 · Week 4</title>
+  <link rel="stylesheet" href="lib/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/neo.css">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/route.css">
+  <link rel="stylesheet" href="css/auth.css">
+  <link rel="stylesheet" href="css/custom-place.css">
+</head>
+<body>
+  <div id="app">
+    <div id="map" role="application" aria-label="NCT 首尔同款地图"></div>
+
+    <header id="topbar" class="glass">
+      <div class="tb-brand">
+        <div class="logo">NEO&nbsp;MAP</div>
+        <div class="tb-titles"><h1>NCT 首尔同款地图</h1><p class="subtitle">NCT · 127 · DREAM · WayV · WISH</p></div>
+      </div>
+      <div class="search-box tb-search">
+        <input id="search" type="search" placeholder="搜索成员 / 分队 / 店铺 / 地铁站…（如：泰容 咖啡）" autocomplete="off" enterkeyhint="search">
+        <button id="search-clear" class="search-clear" title="清空搜索" aria-label="清空搜索">✕</button>
+      </div>
+      <div class="tb-actions">
+        <button id="auth-open" class="hbtn" type="button">👤 <span id="auth-label">登录</span></button>
+        <button id="route-open" class="hbtn hbtn-route" type="button">🧭 <span class="hbtn-label">路线</span></button>
+        <button id="filter-toggle" class="hbtn hbtn-filter" type="button">☰ <span class="hbtn-label">筛选</span></button>
+      </div>
+    </header>
+
+    <div id="route-select-banner" class="route-select-banner glass" hidden>
+      <span class="rsb-check">✓</span>
+      <div class="rsb-copy"><b id="route-select-title">正在选择路线地点</b><span id="route-select-count">已选 0 个地点</span></div>
+      <button id="route-select-done" type="button">完成选点</button>
+    </div>
+
+    <div id="sidebar-scrim" class="sidebar-scrim" hidden></div>
+
+    <aside id="sidebar" class="glass" aria-label="筛选控制台">
+      <div class="sidebar-top"><h2>⌘ 筛选控制台</h2><button id="sidebar-close" class="icon-btn" type="button">✕</button></div>
+      <div class="panel"><h2>⌗ 分类 · CATEGORY</h2><div id="category-filter" class="chips"></div></div>
+      <div class="panel"><h2>🎤 分队 · UNIT</h2><div id="unit-filter" class="chips"></div></div>
+      <div class="panel"><h2>👤 成员 · MEMBER</h2><div id="member-filter" class="chips"></div></div>
+      <div class="panel"><h2>🏷️ 类型 · TYPE</h2><div id="type-filter" class="chips"></div></div>
+      <div class="panel"><h2>🧭 图例 · LEGEND</h2>
+        <div class="legend">
+          <div class="legend-item"><span class="legend-pin store"></span> 同款店铺</div>
+          <div class="legend-item"><span class="legend-pin spot"></span> 拍照打卡点</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#84e82c"></span> 绿色 / 荧光路线</div>
+        </div>
+      </div>
+      <div class="panel"><h2>➕ 添加地点 · ADD</h2><button id="custom-place-open" class="btn-plain" type="button">按地址添加地点</button><p class="route-hint">支持中文、韩文或英文地址，自动识别大致位置，不需要手动输入经纬度。</p></div>
+      <div class="panel actions"><button id="clear-all" class="btn-plain" type="button">清除全部筛选</button></div>
+    </aside>
+
+    <section id="sheet" class="sheet" data-state="peek" aria-label="打卡地点列表">
+      <div id="sheet-grip" class="sheet-grip" role="button" tabindex="0"><span></span></div>
+      <div id="sheet-head" class="sheet-head" role="button" tabindex="0">
+        <div class="sheet-title">📍 打卡地点</div>
+        <span id="result-count" class="sheet-count">…</span>
+        <span class="sheet-actions"><button id="fab-bucket" class="fab fab-sm" type="button" title="我的收藏">❤️<small id="fab-bucket-count">0</small></button></span>
+        <button id="sheet-expand" class="sheet-chev" type="button">⌃</button>
+      </div>
+      <div id="quickchips" class="quickchips"></div>
+      <div id="sheet-body" class="sheet-body"><div id="place-list" class="place-list"></div><p id="empty-tip" class="empty-tip" hidden>没有找到地点</p></div>
+    </section>
+  </div>
+
+  <div id="route-scrim" class="route-scrim" hidden></div>
+  <aside id="route-drawer" class="route-drawer glass" aria-hidden="true">
+    <div class="route-drawer-head"><div><span class="rd-eyebrow">PUBLIC TRANSIT · SEOUL</span><h2>🧭 最优路线规划</h2></div><button id="route-close" class="icon-btn" type="button">✕</button></div>
+    <div class="route-drawer-body">
+      <div id="route-panel" class="route-panel open">
+        <section class="rd-card"><div class="rd-step-head"><span class="rd-step-no">1</span><div><h3>填写出发地</h3><p>地铁站名或地址均可；留空则从第一站出发。</p></div></div><label class="route-origin-label">🏠 出发地址<input id="route-origin" type="text" placeholder="如：홍대입구역 / 弘大入口"></label></section>
+        <section class="rd-card"><div class="rd-step-head"><span class="rd-step-no">2</span><div><h3>选择地点</h3><p>至少选择两个地点。</p></div></div><div class="rd-select-summary"><b id="route-count">已选 0 个地点</b><span>至少 2 个</span></div><div id="route-selected-list" class="rd-selected-list"></div><div class="route-btns"><button id="route-toggle" class="route-toggle" type="button">📍 开始地图选点</button><button id="route-clear" class="btn-plain" type="button">清空选择</button></div><label class="rd-auto"><input id="route-auto-plan" type="checkbox" checked> 完成选点后自动规划</label></section>
+        <section class="rd-card rd-plan-actions"><div class="rd-step-head"><span class="rd-step-no">3</span><div><h3>生成路线</h3><p>按公共交通时间估算顺序，并标注气候卡可用性。</p></div></div><button id="route-plan" class="btn-primary" type="button">🚇 规划最优路线</button><div id="route-msg" class="route-msg"></div></section>
+        <div id="route-result"></div>
+      </div>
+    </div>
+  </aside>
+
+  <div id="dp-scrim" class="dp-scrim" hidden></div>
+  <aside id="detail-panel" class="detail-panel glass" aria-hidden="true">
+    <div class="dp-grip"></div>
+    <div class="dp-head"><span class="dp-eyebrow" id="dp-eyebrow">NCT SPOT</span><button id="dp-close" class="dp-close" type="button">✕</button></div>
+    <div id="dp-body"></div>
+    <div class="dp-foot"><div class="dp-actions">
+      <button class="neo-btn" id="dp-copy" type="button">📋 复制韩文地址</button>
+      <button class="neo-btn heart" id="dp-fav" type="button">🤍 收藏</button>
+      <button class="neo-btn primary wide" id="dp-naver" type="button">🗺 在 Naver Map 中打开</button>
+      <button class="neo-btn wide" id="dp-google" type="button">🌐 在 Google Maps 中打开</button>
+    </div></div>
+  </aside>
+
+  <aside id="bucket-drawer" class="bucket-drawer glass" aria-hidden="true">
+    <div class="bucket-head"><span>❤️ 我的收藏</span><button id="bucket-close" class="icon-btn" type="button">✕</button></div>
+    <div id="bucket-list" class="bucket-list"></div>
+    <div class="bucket-actions"><button id="bucket-clear" class="btn-plain" type="button">清空收藏</button></div>
+  </aside>
+
+  <div id="dp-toast" class="dp-toast" role="status"></div>
+
+  <div id="custom-place-modal" class="custom-modal" hidden>
+    <div class="custom-backdrop" data-custom-close></div>
+    <section class="custom-card glass" role="dialog" aria-modal="true" aria-labelledby="custom-title">
+      <button id="custom-close" class="custom-close" type="button">✕</button>
+      <div class="custom-kicker">ADD A PLACE</div>
+      <h2 id="custom-title">按地址添加地点</h2>
+      <p class="custom-hint">输入中文、韩文或英文地址，系统会自动识别大致位置。经纬度由系统填入，不需要手动查找。</p>
+      <form id="custom-form" class="custom-form">
+        <label>地点名称 *<input id="custom-name" required placeholder="例如：首尔林 / 서울숲"></label>
+        <label>地址 *<input id="custom-address" required placeholder="例如：서울 성동구 서울숲길 1 / Seoul Forest / 首尔城东区"></label>
+        <div class="custom-row"><label>韩文名称<input id="custom-name-ko" placeholder="选填"></label><label>最近地铁站<input id="custom-station" placeholder="选填，例如：서울숲역"></label></div>
+        <div class="custom-row"><label>分类<select id="custom-category"><option value="store">同款店铺</option><option value="spot">拍照打卡点</option></select></label><label>类型<select id="custom-type"><option>美食</option><option>咖啡</option><option>购物</option><option>官方周边</option><option>快闪</option><option>拍摄地</option><option>拍照打卡点</option><option>演出场地</option><option>展览</option></select></label></div>
+        <label>描述<textarea id="custom-desc" rows="2" placeholder="选填：成员同款、营业时间、注意事项"></textarea></label>
+        <label>来源链接<input id="custom-source" placeholder="选填：https://..."></label>
+        <label>所属分队（可多选）<div id="custom-units" class="custom-chips"></div></label>
+        <label>相关成员（可多选）<div id="custom-members" class="custom-chips"></div></label>
+        <button id="custom-geocode" class="custom-geocode" type="button">🔎 识别地址</button>
+        <div id="custom-geocode-result" class="custom-geocode-result">尚未识别地址</div>
+        <button id="custom-save" class="custom-save" type="submit">保存并加入地图</button>
+        <div id="custom-msg" class="custom-msg"></div>
+      </form>
+    </section>
+  </div>
+
+  <div id="auth-modal" class="auth-modal" hidden>
+    <div class="auth-backdrop" data-auth-close></div>
+    <section class="auth-card glass" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+      <button id="auth-close" class="auth-close" type="button">✕</button>
+      <div class="auth-kicker">NCT SEOUL MAP</div>
+      <h2 id="auth-title">登录 / 注册</h2>
+      <p class="auth-hint">登录后可跨设备保存账号；游客也可以直接浏览地图和规划路线。</p>
+      <div class="auth-tabs"><button id="auth-tab-login" class="on" type="button">登录</button><button id="auth-tab-register" type="button">注册</button></div>
+      <form id="auth-login-form" class="auth-form">
+        <label>用户名<input id="auth-login-user" autocomplete="username" placeholder="3–24 位用户名"></label>
+        <label>密码<input id="auth-login-pass" type="password" autocomplete="current-password" placeholder="至少 8 位"></label>
+        <div id="auth-login-msg" class="auth-msg"></div>
+        <button class="auth-main" type="submit">登录</button>
+      </form>
+      <form id="auth-register-form" class="auth-form" hidden>
+        <label>用户名<input id="auth-reg-user" autocomplete="username" placeholder="3–24 位用户名"></label>
+        <label>密码<input id="auth-reg-pass" type="password" autocomplete="new-password" placeholder="至少 8 位，不能与用户名相同"></label>
+        <label>找回问题<input id="auth-reg-question" placeholder="如：我的第一张专辑是？"></label>
+        <label>找回答案<input id="auth-reg-answer" placeholder="找回答案"></label>
+        <div id="auth-reg-msg" class="auth-msg"></div>
+        <button class="auth-main" type="submit">注册并登录</button>
+      </form>
+      <button id="auth-logout" class="auth-logout" type="button" hidden>退出登录</button>
+      <div id="auth-user" class="auth-user"></div>
+      <button id="auth-guest" class="auth-guest" type="button">游客继续浏览</button>
+    </section>
+  </div>
+
+  <script src="lib/leaflet.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/custom-places.js"></script>
+  <script src="js/transit.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/shell.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>
