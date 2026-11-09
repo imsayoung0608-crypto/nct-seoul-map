@@ -179,6 +179,8 @@
   function popupHtml(p) {
     var h = [];
     h.push('<div class="pop">');
+    var popImage = p.image || (Array.isArray(p.images) && p.images[0]) || '';
+    if (popImage) h.push('<img class="pop-img" src="' + esc(popImage) + '" alt="' + esc(p.name) + '" loading="lazy">');
     h.push('<div class="pop-title">' + esc(p.name) + (p.nameKo ? ' <span class="pop-ko">' + esc(p.nameKo) + '</span>' : '') + '</div>');
     h.push('<div class="pop-badges">');
     p.units.forEach(function (u) { if (UNITS[u]) h.push('<span class="badge badge-unit" style="background:' + UNITS[u].color + '">' + esc(UNITS[u].name) + '</span>'); });
@@ -1116,6 +1118,11 @@
     var body = document.getElementById('dp-body');
     if (!body) return;
     var h = [];
+    var detailImage = p.image || (Array.isArray(p.images) && p.images[0]) || '';
+    if (detailImage) h.push('<div class="dp-hero"><img src="' + esc(detailImage) + '" alt="' + esc(p.name) + '" loading="lazy"></div>');
+    else h.push('<div class="dp-hero dp-hero-empty"><span>🖼</span><small>还没有地点图片</small></div>');
+    h.push('<button type="button" class="dp-image-btn" data-place-image-id="' + esc(p.id) + '">🖼 设置 / 更换图片</button>');
+    if (detailImage) h.push('<button type="button" class="dp-image-btn dp-image-remove" data-place-image-remove="' + esc(p.id) + '">移除图片</button>');
     h.push('<div class="dp-title">' + esc(p.name) + '</div>');
     if (p.nameKo) h.push('<div class="dp-ko">' + esc(p.nameKo) + '</div>');
     h.push('<div class="dp-type-badges">');
