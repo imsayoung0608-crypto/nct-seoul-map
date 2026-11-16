@@ -1146,7 +1146,13 @@
     if (p.hours) h.push('<tr><td>营业时间</td><td>' + esc(p.hours) + '</td></tr>');
     h.push('</table>');
     if (p.source) h.push('<p class="dp-source">🔗 <a href="' + esc(p.source) + '" target="_blank" rel="noopener">资料来源 / 相关讨论</a></p>');
+    h.push('<div class="dp-social" data-place-social-id="' + esc(p.id) + '">');
+    h.push('<div class="dp-social-head"><div><b>💬 地点讨论</b><small>分享到访体验和同款信息</small></div><button type="button" class="dp-like-btn" data-place-like-id="' + esc(p.id) + '"><span data-like-icon>🤍</span><span data-like-count>0</span></button></div>');
+    h.push('<div class="dp-comment-list" data-comment-list><div class="dp-comment-empty">正在加载评论…</div></div>');
+    h.push('<form class="dp-comment-form" data-comment-form><textarea data-comment-input maxlength="500" placeholder="分享你的到访体验、同款推荐或注意事项…"></textarea><div class="dp-comment-actions"><span data-social-msg></span><button type="submit" data-comment-submit>发表评论</button></div></form>');
+    h.push('</div>');
     body.innerHTML = h.join('');
+    window.dispatchEvent(new CustomEvent('nct:detail-rendered', { detail: { placeId: p.id, placeName: p.name } }));
   }
 
   function refreshFavBtn() {
