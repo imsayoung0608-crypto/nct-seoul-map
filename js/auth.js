@@ -3,6 +3,12 @@
   'use strict';
   var TOKEN_KEY = 'nct_week4_token';
   var state = { user: null };
+  window.NCTAuth = {
+    getToken: token,
+    getUser: function () { return state.user; },
+    isLoggedIn: function () { return !!state.user; },
+    open: function () { openModal(); }
+  };
   function $(id) { return document.getElementById(id); }
   function token() { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } }
   function setToken(value) { try { value ? localStorage.setItem(TOKEN_KEY, value) : localStorage.removeItem(TOKEN_KEY); } catch (e) {} }
