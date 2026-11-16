@@ -16,6 +16,20 @@
   <link rel="stylesheet" href="css/place-social.css">
 </head>
 <body>
+  <div id="neo-splash" class="neo-splash" role="button" tabindex="0" aria-label="进入 NCT 首尔同款地图">
+    <div class="neo-splash-grid" aria-hidden="true"></div>
+    <div class="neo-orbit neo-orbit-a" aria-hidden="true"></div>
+    <div class="neo-orbit neo-orbit-b" aria-hidden="true"></div>
+    <div class="neo-splash-core">
+      <span class="neo-splash-kicker">NCT SEOUL MAP · 2026</span>
+      <strong class="neo-splash-title">NEO<br>GOT MY BACK</strong>
+      <span class="neo-splash-sub">SEOUL · SAME PLACE, SAME MEMORY</span>
+      <span class="neo-splash-enter">点击进入 <i>或等待 2 秒</i></span>
+    </div>
+    <span class="neo-splash-corner neo-splash-corner-tl" aria-hidden="true"></span>
+    <span class="neo-splash-corner neo-splash-corner-br" aria-hidden="true"></span>
+  </div>
+
   <div id="app">
     <div id="map" role="application" aria-label="NCT 首尔同款地图"></div>
 
@@ -137,7 +151,7 @@
       <button id="auth-close" class="auth-close" type="button">✕</button>
       <div class="auth-kicker">NCT SEOUL MAP</div>
       <h2 id="auth-title">登录 / 注册</h2>
-      <p class="auth-hint">登录后可跨设备保存账号；游客也可以直接浏览地图和规划路线。</p>
+      <p id="auth-mode-hint" class="auth-hint">正在检测账号模式…</p>
       <div class="auth-tabs"><button id="auth-tab-login" class="on" type="button">登录</button><button id="auth-tab-register" type="button">注册</button></div>
       <form id="auth-login-form" class="auth-form">
         <label>用户名<input id="auth-login-user" autocomplete="username" placeholder="3–24 位用户名"></label>
