@@ -34,6 +34,20 @@ CREATE TABLE IF NOT EXISTS sessions (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+CREATE TABLE IF NOT EXISTS place_likes (
+  place_id TEXT NOT NULL,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (place_id, user_id)
+);
+CREATE TABLE IF NOT EXISTS place_comments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  place_id TEXT NOT NULL,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  text TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_place_comments_place ON place_comments(place_id, id DESC);
 DROP TABLE IF EXISTS folder_shares;
 DROP TABLE IF EXISTS folders;
 DROP TABLE IF EXISTS routes;
@@ -61,7 +75,7 @@ function json(res, code, body) {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'
+    'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS'
   });
   res.end(JSON.stringify(body));
 }
@@ -101,6 +115,16 @@ function auth(req) {
     return null;
   }
   return { id: row.id, username: row.username, token: token };
+}
+
+function socialFor(placeId, me) {
+  const likesCount = db.prepare('SELECT COUNT(*) AS n FROM place_likes WHERE place_id=?').get(placeId).n;
+  const likedByMe = !!(me && db.prepare('SELECT 1 FROM place_likes WHERE place_id=? AND user_id=?').get(placeId, me.id));
+  const comments = db.prepare('SELECT c.id, c.user_id, u.username, c.text, c.created_at FROM place_comments c JOIN users u ON u.id=c.user_id WHERE c.place_id=? ORDER BY c.id DESC LIMIT 200').all(placeId)
+    .map(function (c) {
+      return { id: c.id, author: c.username, username: c.username, text: c.text, createdAt: c.created_at, canDelete: !!(me && me.id === c.user_id) };
+    });
+  return { placeId: placeId, likesCount: likesCount, liked: likedByMe, comments: comments, local: false };
 }
 
 const server = http.createServer(async function (req, res) {
@@ -169,6 +193,39 @@ const server = http.createServer(async function (req, res) {
     }
     if (pathname === '/api/auth/logout' && req.method === 'POST') {
       if (me) db.prepare('DELETE FROM sessions WHERE token=?').run(me.token);
+      return json(res, 200, { ok: true });
+    }
+
+    let socialMatch;
+    if ((socialMatch = pathname.match(/^\/api\/places\/([A-Za-z0-9_-]+)\/social$/)) && req.method === 'GET') {
+      return json(res, 200, socialFor(decodeURIComponent(socialMatch[1]), me));
+    }
+    if ((socialMatch = pathname.match(/^\/api\/places\/([A-Za-z0-9_-]+)\/like$/)) && req.method === 'POST') {
+      if (!me) return json(res, 401, { error: '请先登录后再点赞' });
+      const placeId = decodeURIComponent(socialMatch[1]);
+      const existing = db.prepare('SELECT 1 FROM place_likes WHERE place_id=? AND user_id=?').get(placeId, me.id);
+      if (existing) db.prepare('DELETE FROM place_likes WHERE place_id=? AND user_id=?').run(placeId, me.id);
+      else db.prepare('INSERT INTO place_likes(place_id,user_id,created_at) VALUES(?,?,?)').run(placeId, me.id, nowISO());
+      return json(res, 200, socialFor(placeId, me));
+    }
+    if ((socialMatch = pathname.match(/^\/api\/places\/([A-Za-z0-9_-]+)\/comments$/)) && req.method === 'POST') {
+      if (!me) return json(res, 401, { error: '请先登录后再发表评论' });
+      const body = await readBody(req);
+      if (!body) return json(res, 400, { error: '请求格式错误' });
+      const text = norm(body.text);
+      if (!text) return json(res, 400, { error: '评论不能为空' });
+      if (text.length > 500) return json(res, 400, { error: '评论不能超过 500 字' });
+      db.prepare('INSERT INTO place_comments(place_id,user_id,text,created_at) VALUES(?,?,?,?)').run(decodeURIComponent(socialMatch[1]), me.id, text, nowISO());
+      return json(res, 201, socialFor(decodeURIComponent(socialMatch[1]), me));
+    }
+    const commentDeleteMatch = pathname.match(/^\/api\/comments\/(\d+)$/);
+    if (commentDeleteMatch && req.method === 'DELETE') {
+      if (!me) return json(res, 401, { error: '请先登录后再删除评论' });
+      const cid = Number(commentDeleteMatch[1]);
+      const row = db.prepare('SELECT * FROM place_comments WHERE id=?').get(cid);
+      if (!row) return json(res, 404, { error: '评论不存在' });
+      if (row.user_id !== me.id) return json(res, 403, { error: '只能删除自己的评论' });
+      db.prepare('DELETE FROM place_comments WHERE id=?').run(cid);
       return json(res, 200, { ok: true });
     }
 
